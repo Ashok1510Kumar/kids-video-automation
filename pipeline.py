@@ -1,13 +1,8 @@
 #!/usr/bin/env python3
 """
-LALAFUN STUDIO PRODUCTION PIPELINE
-Implements the 7 Production Pillars:
-1. Character Bible adherence (Fixed palette, silhouette, facial features)
-2. Beat-synced squash & stretch, periodic eye blinks, and phoneme lip-sync
-3. Modular environments with depth-of-field background blur
-4. Music box melody + mastered audio + sound effects (sparkle, boing, pop)
-5. Intro bumper + Outro with YouTube End-Screen safe zones
-6. YouTube upload with strict COPPA compliance
+LALAFUN STUDIO PRODUCTION PIPELINE (3D CGI ASSETS EDITION)
+Composites high-definition 3D character assets, cinematic 3D backgrounds,
+beat-synced squash & stretch, floating bubbles/sparkles, and broadcast audio.
 """
 
 import os
@@ -31,21 +26,16 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 
 # Studio Modules
-from character_bible import CHARACTERS
 from animator import StudioAnimator
-from environment import create_sunny_garden_environment
 from music_generator import generate_nursery_music
 from sfx_generator import generate_all_sfx
 from cartoon_assets import (
-    create_smiling_sun,
-    create_fluffy_cloud,
     create_musical_note,
-    create_sparkle_star,
-    create_rainbow_banner
+    create_sparkle_star
 )
 
 # ==========================================
-# 1. CURATED NURSERY RHYMES CATALOG (90-120 BPM)
+# 1. NURSERY RHYMES CATALOG (90-120 BPM)
 # ==========================================
 RHYMES = [
     {
@@ -133,7 +123,6 @@ def build_soundtrack(rhyme: dict, voice_path: str, output_soundtrack_path: str) 
     """
     generate_all_sfx()
     voice_clip = AudioFileClip(voice_path)
-    # 2.5s Intro + Voice Duration + 3.0s Outro
     intro_dur = 2.5
     outro_dur = 3.0
     total_duration = intro_dur + voice_clip.duration + outro_dur
@@ -164,9 +153,9 @@ def build_soundtrack(rhyme: dict, voice_path: str, output_soundtrack_path: str) 
     return total_duration
 
 # ==========================================
-# 3. PRODUCTION SCENE COMPOSITOR
+# 3. PRODUCTION SCENE COMPOSITOR (3D ASSETS)
 # ==========================================
-class LalafunDirector:
+class Lalafun3DDirector:
     def __init__(self, rhyme: dict, total_duration: float, width=720, height=1280):
         self.rhyme = rhyme
         self.total_duration = total_duration
@@ -175,58 +164,69 @@ class LalafunDirector:
         self.width = width
         self.height = height
 
-        # Initialize Character Rig & Animator
-        self.animator = StudioAnimator(rhyme["character"], bpm=rhyme["bpm"])
+        # Base directories
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        bg_path = os.path.join(base_dir, "assets", "backgrounds", "cocomelon_meadow.png")
 
-        # Load typography
+        # Load 3D background
+        if os.path.exists(bg_path):
+            self.bg_base = Image.open(bg_path).convert("RGBA")
+            if self.bg_base.size != (width, height):
+                self.bg_base = self.bg_base.resize((width, height), Image.LANCZOS)
+            print("Loaded 3D Cocomelon Meadow background asset.")
+        else:
+            # Fallback sunny sky
+            self.bg_base = Image.new("RGBA", (width, height), (135, 206, 235, 255))
+
+        # Initialize Character Rig with 3D Assets
+        self.animator = StudioAnimator(rhyme["character"], bpm=rhyme["bpm"], target_height=560)
+
+        # Ambient Sprites
+        self.note_pink = create_musical_note(size=80, color=(255, 64, 129))
+        self.note_cyan = create_musical_note(size=75, color=(0, 229, 255))
+        self.star_sprite = create_sparkle_star(size=85)
+
+        # Typography
         try:
-            self.font_title = ImageFont.truetype("DejaVuSans-Bold.ttf", 40)
+            self.font_title = ImageFont.truetype("DejaVuSans-Bold.ttf", 38)
             self.font_sub = ImageFont.truetype("DejaVuSans-Bold.ttf", 32)
             self.font_cta = ImageFont.truetype("DejaVuSans-Bold.ttf", 26)
         except IOError:
             try:
-                self.font_title = ImageFont.truetype("arialbd.ttf", 40)
+                self.font_title = ImageFont.truetype("arialbd.ttf", 38)
                 self.font_sub = ImageFont.truetype("arialbd.ttf", 32)
                 self.font_cta = ImageFont.truetype("arialbd.ttf", 26)
             except IOError:
                 self.font_title = self.font_sub = self.font_cta = ImageFont.load_default()
 
-        # Build environments & sprites
-        print("Assembling studio environment & lighting layers...")
-        self.env_bg = create_sunny_garden_environment(width, height)
-        self.sun_sprite = create_smiling_sun(size=250)
-        self.cloud_sprite = create_fluffy_cloud(width=270, height=140)
-        self.rainbow_sprite = create_rainbow_banner(width=720, height=160)
-        self.note_pink = create_musical_note(size=85, color=(255, 64, 129))
-        self.note_cyan = create_musical_note(size=80, color=(0, 229, 255))
-        self.star_sprite = create_sparkle_star(size=90)
-
     def render_frame(self, t: float) -> np.ndarray:
-        frame = self.env_bg.copy()
+        # 1. Subtle Cinematic Ken Burns Camera Push-in (1.00 -> 1.05)
+        zoom = 1.00 + 0.04 * (t / max(1.0, self.total_duration))
+        zw = int(self.width * zoom)
+        zh = int(self.height * zoom)
+        zoomed_bg = self.bg_base.resize((zw, zh), Image.BILINEAR)
+        crop_x = (zw - self.width) // 2
+        crop_y = (zh - self.height) // 2
+        frame = zoomed_bg.crop((crop_x, crop_y, crop_x + self.width, crop_y + self.height)).copy()
         draw = ImageDraw.Draw(frame)
 
         # ----------------------------------------------------
         # SCENE A: INTRO BUMPER (0.0s to 2.5s)
         # ----------------------------------------------------
         if t < self.intro_dur:
-            # Rotating Sun & Rainbow
-            frame.alpha_composite(self.rainbow_sprite, (0, 140))
-            rot_sun = self.sun_sprite.rotate((t * 24.0) % 360, resample=Image.BICUBIC)
-            frame.alpha_composite(rot_sun, (self.width - 230, 40))
-
             # Cheerful Welcome Card
-            intro_card_w, intro_card_h = 640, 240
+            intro_card_w, intro_card_h = 640, 220
             ix0 = (self.width - intro_card_w) // 2
-            iy0 = 240
-            draw.rounded_rectangle([ix0 + 4, iy0 + 6, ix0 + intro_card_w + 4, iy0 + intro_card_h + 6], radius=30, fill=(0, 0, 0, 45))
+            iy0 = 220
+            draw.rounded_rectangle([ix0 + 4, iy0 + 6, ix0 + intro_card_w + 4, iy0 + intro_card_h + 6], radius=30, fill=(0, 0, 0, 50))
             draw.rounded_rectangle([ix0, iy0, ix0 + intro_card_w, iy0 + intro_card_h], radius=30, fill=(255, 238, 88), outline=(255, 143, 0), width=6)
-            draw.text((self.width // 2, iy0 + 70), "⭐ LALAFUN NURSERY ⭐", fill=(40, 40, 40), font=self.font_title, anchor="mm")
-            draw.text((self.width // 2, iy0 + 150), self.rhyme["title"], fill=(216, 27, 96), font=self.font_sub, anchor="mm")
+            draw.text((self.width // 2, iy0 + 65), "⭐ LALAFUN NURSERY ⭐", fill=(40, 40, 40), font=self.font_title, anchor="mm")
+            draw.text((self.width // 2, iy0 + 145), self.rhyme["title"], fill=(216, 27, 96), font=self.font_sub, anchor="mm")
 
-            # Waving Character Pose
+            # 3D Character Pose
             char_sprite, hop = self.animator.get_frame_pose(t, is_singing=False)
             cx = (self.width - char_sprite.width) // 2
-            cy = int(620 + hop)
+            cy = int(580 + hop)
             frame.alpha_composite(char_sprite, (cx, cy))
 
         # ----------------------------------------------------
@@ -235,20 +235,19 @@ class LalafunDirector:
         elif t >= self.total_duration - self.outro_dur:
             outro_w, outro_h = 650, 680
             ox0 = (self.width - outro_w) // 2
-            oy0 = 200
-            # Card background
+            oy0 = 180
             draw.rounded_rectangle([ox0, oy0, ox0 + outro_w, oy0 + outro_h], radius=35, fill=(255, 255, 255), outline=(255, 64, 129), width=7)
             draw.text((self.width // 2, oy0 + 60), "🎉 THANKS FOR WATCHING! 🎉", fill=(216, 27, 96), font=self.font_title, anchor="mm")
             draw.text((self.width // 2, oy0 + 120), "Sing along with us again tomorrow!", fill=(70, 70, 70), font=self.font_sub, anchor="mm")
 
-            # YouTube End Screen Placeholders (Subscribe Circle & Next Video Box)
+            # YouTube End Screen Placeholders
             draw.ellipse([self.width // 2 - 80, oy0 + 170, self.width // 2 + 80, oy0 + 330], fill=(255, 240, 245), outline=(255, 64, 129), width=5)
             draw.text((self.width // 2, oy0 + 250), "SUBSCRIBE", fill=(216, 27, 96), font=self.font_sub, anchor="mm")
 
             draw.rounded_rectangle([ox0 + 60, oy0 + 370, ox0 + outro_w - 60, oy0 + 580], radius=20, fill=(240, 248, 255), outline=(33, 150, 243), width=5)
             draw.text((self.width // 2, oy0 + 475), "▶ NEXT NURSERY RHYME", fill=(25, 118, 210), font=self.font_sub, anchor="mm")
 
-            # Small dancing character at the bottom
+            # Small dancing character thumbnail
             char_sprite, hop = self.animator.get_frame_pose(t, is_singing=False)
             thumb_char = char_sprite.resize((240, 240), Image.BILINEAR)
             frame.alpha_composite(thumb_char, ((self.width - 240) // 2, self.height - 300))
@@ -259,44 +258,31 @@ class LalafunDirector:
         else:
             rel_t = t - self.intro_dur
 
-            # 1. Background Rainbow Arc
-            frame.alpha_composite(self.rainbow_sprite, (0, 140))
-
-            # 2. Rotating Smiling Sun
-            rot_sun = self.sun_sprite.rotate((t * 22.0) % 360, resample=Image.BICUBIC)
-            frame.alpha_composite(rot_sun, (self.width - 230, 40))
-
-            # 3. Parallax Floating Clouds
-            c1_x = int((t * 26.0) % (self.width + 300)) - 270
-            c2_x = int((t * 16.0 + 360) % (self.width + 300)) - 270
-            frame.alpha_composite(self.cloud_sprite, (c1_x, 90))
-            frame.alpha_composite(self.cloud_sprite, (c2_x, 210))
-
-            # 4. Floating Musical Notes (Wobbling Sine Wave)
+            # 1. Floating Musical Notes & Sparkling Stars
             for idx, (note_img, nx, spd, phase) in enumerate([
-                (self.note_pink, 110, 65, 0.0),
-                (self.note_cyan, 220, 80, 1.8),
-                (self.star_sprite, 570, 70, 3.5),
+                (self.note_pink, 100, 65, 0.0),
+                (self.note_cyan, 210, 80, 1.8),
+                (self.star_sprite, 580, 70, 3.5),
             ]):
                 ny = int(self.height - 360 - ((t * spd + phase * 90) % 650))
                 rx = int(nx + 22 * math.sin(t * 2.8 + phase))
                 frame.alpha_composite(note_img, (rx, ny))
 
-            # 5. Beat-Synced Animated Character (Squash, Stretch, Blink, Lip-Sync)
+            # 2. 3D Hero Character (Squash, Stretch, Beat Hopping & Singing Swaps)
             char_sprite, hop = self.animator.get_frame_pose(t, is_singing=True)
             cx = (self.width - char_sprite.width) // 2
-            cy = int(580 + hop)
+            cy = int(520 + hop)
             frame.alpha_composite(char_sprite, (cx, cy))
 
-            # 6. Top Studio Branding
-            badge_w, badge_h = 620, 70
+            # 3. Top Studio Branding Pill
+            badge_w, badge_h = 620, 68
             bx0 = (self.width - badge_w) // 2
             by0 = 35
-            draw.rounded_rectangle([bx0 + 3, by0 + 5, bx0 + badge_w + 3, by0 + badge_h + 5], radius=22, fill=(0, 0, 0, 40))
+            draw.rounded_rectangle([bx0 + 3, by0 + 5, bx0 + badge_w + 3, by0 + badge_h + 5], radius=22, fill=(0, 0, 0, 45))
             draw.rounded_rectangle([bx0, by0, bx0 + badge_w, by0 + badge_h], radius=22, fill=(255, 238, 88), outline=(255, 143, 0), width=5)
             draw.text((self.width // 2, by0 + badge_h // 2), "⭐ LALAFUN NURSERY RHYMES ⭐", fill=(40, 40, 40), font=self.font_sub, anchor="mm")
 
-            # 7. Karaoke Lyric Cards (Bottom Container)
+            # 4. Karaoke Lyric Cards (Bottom Container)
             stanzas = self.rhyme["stanzas"]
             total_song_time = self.total_duration - self.intro_dur - self.outro_dur
             stanza_dur = total_song_time / len(stanzas)
@@ -321,9 +307,9 @@ class LalafunDirector:
         return np.array(rgb_out)
 
 def render_studio_video(rhyme: dict, audio_path: str, output_path: str, duration: float):
-    """Composites the full Lalafun animation with mastered audio."""
-    print("Beginning Studio video composition...")
-    director = LalafunDirector(rhyme, duration, width=720, height=1280)
+    """Composites the full 3D Lalafun animation with mastered audio."""
+    print("Beginning 3D Studio video composition...")
+    director = Lalafun3DDirector(rhyme, duration, width=720, height=1280)
 
     audio_clip = AudioFileClip(audio_path)
     video = VideoClip(lambda t: director.render_frame(t), duration=duration).set_audio(audio_clip)
@@ -336,7 +322,7 @@ def render_studio_video(rhyme: dict, audio_path: str, output_path: str, duration
         preset="ultrafast",
         logger=None
     )
-    print(f"Lalafun studio video rendered: {output_path} ({duration:.1f}s)")
+    print(f"3D Studio video successfully rendered: {output_path} ({duration:.1f}s)")
 
 # ==========================================
 # 4. YOUTUBE UPLOADER (COPPA COMPLIANT)
@@ -361,12 +347,12 @@ def upload_to_youtube(video_path: str, rhyme: dict) -> str:
 
     youtube = build("youtube", "v3", credentials=creds)
 
-    title = f"{rhyme['title']} | Lalafun Nursery Rhymes for Kids #Shorts"
+    title = f"{rhyme['title']} | 3D Lalafun Nursery Rhymes for Kids #Shorts"
     description = (
-        f"Sing and dance with Leo the Bear in {rhyme['title']}! 🐻🎶✨\n\n"
+        f"Sing and dance with 3D Leo the Bear in {rhyme['title']}! 🐻🎶✨\n\n"
         "Song Lyrics:\n"
         + "\n".join(rhyme["stanzas"])
-        + "\n\n🔔 Subscribe to Lalafun for new joyful nursery rhymes and kids songs every day!\n\n"
+        + "\n\n🔔 Subscribe to Lalafun for new joyful 3D nursery rhymes and kids songs every day!\n\n"
         "#Shorts #NurseryRhymes #Lalafun #Cocomelon #KidsSongs #ToddlerLearning #ChildrenAnimation #SingAlong"
     )
 
@@ -402,13 +388,13 @@ def upload_to_youtube(video_path: str, rhyme: dict) -> str:
 # 5. MAIN ENTRY POINT
 # ==========================================
 def main():
-    print(f"=== Lalafun Studio Automation Started ({datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}) ===")
+    print(f"=== Lalafun 3D Studio Automation Started ({datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}) ===")
     rhyme = random.choice(RHYMES)
     print(f"Hero Song: {rhyme['title']} (Character: {rhyme['character']})")
 
     voice_file = "voice_track.mp3"
     soundtrack_file = "soundtrack_master.wav"
-    output_video_file = "lalafun_studio_output.mp4"
+    output_video_file = "lalafun_3d_output.mp4"
 
     # 1. Voiceover
     asyncio.run(generate_speech(rhyme["speech_text"], voice_file))
@@ -416,13 +402,13 @@ def main():
     # 2. Sound Design & Mastered Soundtrack
     duration = build_soundtrack(rhyme, voice_file, soundtrack_file)
 
-    # 3. Studio Video Composition
+    # 3. Studio Video Composition with 3D Assets
     render_studio_video(rhyme, soundtrack_file, output_video_file, duration)
 
     # 4. YouTube Upload
     upload_to_youtube(output_video_file, rhyme)
 
-    print("=== Lalafun Studio Automation Finished Successfully ===")
+    print("=== Lalafun 3D Studio Automation Finished Successfully ===")
 
 if __name__ == "__main__":
     main()
