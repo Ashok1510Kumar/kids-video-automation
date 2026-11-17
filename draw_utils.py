@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 """
-DRAW UTILITIES & SAFE-ZONE TYPOGRAPHY ENGINE
-Ensures all text is automatically word-wrapped, vertically centered,
-and strictly kept INSIDE bounding boxes with zero clipping or overflow.
+DRAW UTILITIES (CLEAN FLOATING SUBTITLES - NO BOXES)
+Renders viral YouTube Shorts subtitles floating directly on screen:
+- Thick black stroke outline (stroke_width=4, stroke_fill=(0, 0, 0)) for 100% legibility on any background
+- Zero background boxes, zero container rectangles, zero ugly borders
+- Dynamic word wrapping into clean, centered 1-2 line subtitle bursts
 """
 
 from PIL import Image, ImageDraw, ImageFont
 
 def get_text_width(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.ImageFont) -> int:
-    """Returns exact pixel width of text."""
     bbox = draw.textbbox((0, 0), text, font=font)
     return bbox[2] - bbox[0]
 
 def wrap_text(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.ImageFont, max_width: int) -> list:
-    """Wraps text into lines that do not exceed max_width."""
     words = text.split()
     if not words:
         return []
@@ -35,41 +35,41 @@ def wrap_text(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.ImageFont, m
 
     return lines
 
-def draw_contained_text(
+def draw_floating_subtitles(
     draw: ImageDraw.ImageDraw,
     text: str,
-    box: tuple,          # (x0, y0, x1, y1)
+    center_pos: tuple,     # (cx, cy)
     font: ImageFont.ImageFont,
+    max_width=580,
     fill_color=(255, 255, 255),
-    line_spacing=8,
-    align="center"
+    stroke_color=(0, 0, 0),
+    stroke_width=4,
+    line_spacing=10
 ):
     """
-    Renders text strictly inside box (x0, y0, x1, y1) with automatic word-wrapping
-    and vertical centering. Never bleeds outside the box.
+    Renders pure floating subtitles with black outline directly onto the scene.
+    No boxes, no rectangles, no dialogue bubbles.
     """
-    x0, y0, x1, y1 = box
-    max_w = x1 - x0
-    max_h = y1 - y0
-
-    lines = wrap_text(draw, text, font, max_w)
+    cx, cy = center_pos
+    lines = wrap_text(draw, text, font, max_width)
     if not lines:
         return
 
-    # Measure total height
+    # Sample height
     sample_bbox = draw.textbbox((0, 0), "Ag", font=font)
     line_h = sample_bbox[3] - sample_bbox[1]
-    total_text_h = len(lines) * line_h + (len(lines) - 1) * line_spacing
-
-    # Center vertically inside the container
-    start_y = y0 + max(0, (max_h - total_text_h) // 2)
+    total_h = len(lines) * line_h + (len(lines) - 1) * line_spacing
+    start_y = cy - total_h // 2
 
     cur_y = start_y
     for line in lines:
-        lw = get_text_width(draw, line, font)
-        if align == "center":
-            lx = x0 + (max_w - lw) // 2
-        else:
-            lx = x0
-        draw.text((lx, cur_y), line, fill=fill_color, font=font)
+        draw.text(
+            (cx, cur_y + line_h // 2),
+            line,
+            font=font,
+            fill=fill_color,
+            stroke_width=stroke_width,
+            stroke_fill=stroke_color,
+            anchor="mm"
+        )
         cur_y += line_h + line_spacing
