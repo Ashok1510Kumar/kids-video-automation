@@ -2,7 +2,7 @@
 """
 RICKS CLIPS PRODUCTION PIPELINE (@RicksClips3000 Edition)
 Features:
-- Guaranteed text boundary enforcement (zero overflow/clipping via draw_utils)
+- Pure floating YouTube Shorts captions with bold black stroke (NO BOXES, NO BORDERS)
 - Conversational documentary presentation (Rick narrating beside a dynamic visual display)
 - Illustrated story props (Comet airliner, square stress corners, curved oval windows, railroad sun kinks)
 - Multi-character voice acting & syncopated lo-fi groove audio
@@ -38,7 +38,7 @@ from environment_rick import (
     create_airplane_in_flight_prop,
     create_railroad_diagram_prop
 )
-from draw_utils import draw_contained_text
+from draw_utils import draw_floating_subtitles
 from music_generator import generate_nursery_music
 from sfx_generator import generate_all_sfx
 
@@ -112,18 +112,16 @@ class RicksClipsDirector:
 
         # Typography (Auto-scaling & clean fallback)
         try:
-            self.font_header = ImageFont.truetype("DejaVuSans-Bold.ttf", 26)
-            self.font_hook = ImageFont.truetype("DejaVuSans-Bold.ttf", 28)
-            self.font_caption = ImageFont.truetype("DejaVuSans-Bold.ttf", 27)
-            self.font_badge = ImageFont.truetype("DejaVuSans-Bold.ttf", 20)
+            self.font_hook = ImageFont.truetype("DejaVuSans-Bold.ttf", 32)
+            self.font_caption = ImageFont.truetype("DejaVuSans-Bold.ttf", 32)
+            self.font_badge = ImageFont.truetype("DejaVuSans-Bold.ttf", 22)
         except IOError:
             try:
-                self.font_header = ImageFont.truetype("arialbd.ttf", 26)
-                self.font_hook = ImageFont.truetype("arialbd.ttf", 28)
-                self.font_caption = ImageFont.truetype("arialbd.ttf", 27)
-                self.font_badge = ImageFont.truetype("arialbd.ttf", 20)
+                self.font_hook = ImageFont.truetype("arialbd.ttf", 32)
+                self.font_caption = ImageFont.truetype("arialbd.ttf", 32)
+                self.font_badge = ImageFont.truetype("arialbd.ttf", 22)
             except IOError:
-                self.font_header = self.font_hook = self.font_caption = self.font_badge = ImageFont.load_default()
+                self.font_hook = self.font_caption = self.font_badge = ImageFont.load_default()
 
     def render_frame(self, t: float) -> np.ndarray:
         frame = self.env_bg.copy()
@@ -137,29 +135,19 @@ class RicksClipsDirector:
         cur_beat = beats[cur_beat_idx]
 
         # ----------------------------------------------------
-        # 1. TOP PARADOX HOOK CARD (Strictly Contained, 0s to 7s)
+        # 1. FLOATING TOP HOOK HEADLINE (NO BOXES, NO BORDERS)
         # ----------------------------------------------------
         if t < 7.0:
-            card_x0, card_y0 = 50, 60
-            card_x1, card_y1 = self.width - 50, 165
-            # Card background
-            draw.rounded_rectangle([card_x0 + 4, card_y0 + 5, card_x1 + 4, card_y1 + 5], radius=18, fill=(0, 0, 0, 140))
-            draw.rounded_rectangle([card_x0, card_y0, card_x1, card_y1], radius=18, fill=(255, 214, 0), outline=(20, 20, 20), width=4)
-
-            # Badge pill
-            badge_w, badge_h = 320, 30
-            bx0 = (self.width - badge_w) // 2
-            draw.rounded_rectangle([bx0, card_y0 + 8, bx0 + badge_w, card_y0 + 8 + badge_h], radius=10, fill=(20, 20, 20))
-            draw.text(((bx0 + bx0 + badge_w) // 2, card_y0 + 23), "ENGINEERING PARADOX", fill=(255, 214, 0), font=self.font_badge, anchor="mm")
-
-            # Word-wrapped Hook Text strictly inside bounding box
-            draw_contained_text(
+            draw_floating_subtitles(
                 draw=draw,
                 text=self.episode["hook_line"],
-                box=(card_x0 + 15, card_y0 + 42, card_x1 - 15, card_y1 - 8),
+                center_pos=(self.width // 2, 110),
                 font=self.font_hook,
-                fill_color=(194, 24, 91),
-                align="center"
+                max_width=600,
+                fill_color=(255, 225, 0),      # Bright Viral Yellow
+                stroke_color=(0, 0, 0),         # Bold 4px Black Stroke
+                stroke_width=4,
+                line_spacing=8
             )
 
         # ----------------------------------------------------
@@ -177,7 +165,6 @@ class RicksClipsDirector:
             else:
                 frame.alpha_composite(self.prop_oval_safe, (screen_x, screen_y))
         else:
-            # Railroads or general engineering
             if cur_beat_idx in [0, 1]:
                 frame.alpha_composite(self.prop_rail_gap, (screen_x, screen_y))
             elif cur_beat_idx == 2:
@@ -208,46 +195,38 @@ class RicksClipsDirector:
         frame.alpha_composite(char_sprite, (char_x, char_y))
 
         # ----------------------------------------------------
-        # 4. CAPTION CARD (Strictly Contained, Multi-Line Wrapped)
+        # 4. PURE FLOATING VIRAL SUBTITLES (NO BOXES, NO BORDERS)
         # ----------------------------------------------------
         sentences = [s.strip() for s in cur_beat["narration"].split(".") if len(s.strip()) > 3]
         s_idx = min(len(sentences) - 1, int((t % beat_dur) / (beat_dur / max(1, len(sentences)))))
         current_sentence = sentences[s_idx]
 
-        # YouTube Shorts Safe Zone for Subtitles (Kept away from right-side buttons and bottom title)
-        card_x0 = 45
-        card_y0 = self.height - 290
-        card_x1 = self.width - 45
-        card_y1 = self.height - 120
-
-        # High-contrast dark container pill with cyan border
-        draw.rounded_rectangle([card_x0 + 4, card_y0 + 5, card_x1 + 4, card_y1 + 5], radius=22, fill=(0, 0, 0, 160))
-        draw.rounded_rectangle([card_x0, card_y0, card_x1, card_y1], radius=22, fill=(18, 24, 38), outline=(97, 175, 239), width=4)
-
-        # Clean Speaker Badge (No missing emoji boxes!)
-        badge_text = f"SPEAKER: {role}"
-        draw.rounded_rectangle([card_x0 + 20, card_y0 + 12, card_x0 + 240, card_y0 + 42], radius=10, fill=(97, 175, 239))
-        draw.text((card_x0 + 130, card_y0 + 27), badge_text, fill=(15, 20, 25), font=self.font_badge, anchor="mm")
-
-        # RENDER WORD-WRAPPED CAPTION (Never bleeds outside the container)
-        draw_contained_text(
+        # Draw clean, floating, outlined subtitles directly on screen
+        draw_floating_subtitles(
             draw=draw,
             text=current_sentence,
-            box=(card_x0 + 25, card_y0 + 50, card_x1 - 25, card_y1 - 10),
+            center_pos=(self.width // 2, self.height - 180),
             font=self.font_caption,
-            fill_color=(255, 255, 255),
-            line_spacing=6,
-            align="center"
+            max_width=580,
+            fill_color=(255, 255, 255),      # Pure Crisp White
+            stroke_color=(0, 0, 0),          # Bold 4px Black Outline
+            stroke_width=4,
+            line_spacing=8
         )
 
         # ----------------------------------------------------
-        # 5. OUTRO SUBSCRIBER BANNER (Last 2.5 seconds)
+        # 5. FLOATING OUTRO PROMPT (Last 2.5 seconds, NO BOX)
         # ----------------------------------------------------
         if t >= self.total_duration - 2.5:
-            banner_x0, banner_y0 = 60, card_y0 - 55
-            banner_x1, banner_y1 = self.width - 60, card_y0 - 15
-            draw.rounded_rectangle([banner_x0, banner_y0, banner_x1, banner_y1], radius=14, fill=(255, 214, 0), outline=(20, 20, 20), width=3)
-            draw.text(((banner_x0 + banner_x1) // 2, (banner_y0 + banner_y1) // 2), "SUBSCRIBE FOR DAILY MYSTERIES!", fill=(20, 20, 20), font=self.font_badge, anchor="mm")
+            draw.text(
+                (self.width // 2, self.height - 270),
+                "SUBSCRIBE FOR DAILY MYSTERIES!",
+                font=self.font_badge,
+                fill=(255, 225, 0),
+                stroke_width=3,
+                stroke_fill=(0, 0, 0),
+                anchor="mm"
+            )
 
         # Convert to RGB array for MoviePy
         rgb_out = Image.new("RGB", (self.width, self.height), (255, 255, 255))
