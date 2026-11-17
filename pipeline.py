@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
 RICKS CLIPS PRODUCTION PIPELINE (@RicksClips3000 Edition)
-Faithfully produces high-retention 45-second micro-documentary shorts:
-- Signature white bean-head character with conjoined eyes & stick limbs
-- Rapid charismatic narration (175 WPM) with multi-character voice acting
-- Syncopated lo-fi groove soundtrack + mechanical foley SFX
-- Visual technical props and diagrams (railroad gaps, sun kinks, aircraft corners)
-- Centered bold captions with active word bounce and color highlights
+Features:
+- Guaranteed text boundary enforcement (zero overflow/clipping via draw_utils)
+- Conversational documentary presentation (Rick narrating beside a dynamic visual display)
+- Illustrated story props (Comet airliner, square stress corners, curved oval windows, railroad sun kinks)
+- Multi-character voice acting & syncopated lo-fi groove audio
+- YouTube Shorts safe zone adherence (all critical visuals kept inside safe margins)
 """
 
 import os
@@ -34,59 +34,55 @@ from stories_rick import RICKS_EPISODES
 from character_rick import render_ricks_clips_character
 from environment_rick import (
     create_studio_workshop_environment,
+    create_airplane_window_prop,
+    create_airplane_in_flight_prop,
     create_railroad_diagram_prop
 )
+from draw_utils import draw_contained_text
 from music_generator import generate_nursery_music
 from sfx_generator import generate_all_sfx
 
-# Charismatic storytelling voice (American male baritone, crisp & engaging)
+# Charismatic American male narrator (crisp, warm, rapid 175 WPM)
 VOICE_NAME = "en-US-GuyNeural"
 
 # ==========================================
 # 1. AUDIO & SOUND DESIGN (175 WPM + LO-FI GROOVE)
 # ==========================================
 async def generate_narration(episode: dict, output_path: str):
-    """Generates brisk, engaging American voiceover (175 words/min)."""
+    """Generates conversational, rapid American voiceover."""
     full_text = " ".join([beat["narration"] for beat in episode["beats"]])
-    print(f"Synthesizing Rick's Clips narration with {VOICE_NAME}...")
-    communicate = edge_tts.Communicate(full_text, VOICE_NAME, rate="+10%", pitch="+0Hz")
+    print(f"Synthesizing narration with {VOICE_NAME}...")
+    communicate = edge_tts.Communicate(full_text, VOICE_NAME, rate="+9%", pitch="+0Hz")
     await communicate.save(output_path)
 
 def build_soundtrack(episode: dict, voice_path: str, output_soundtrack_path: str) -> float:
-    """
-    Mixes voiceover, syncopated lo-fi groove music, and foley sound effects.
-    """
+    """Mixes voiceover, syncopated lo-fi groove music, and foley sound effects."""
     generate_all_sfx()
     voice_clip = AudioFileClip(voice_path)
     intro_lead = 0.5
     outro_tail = 2.0
     total_duration = intro_lead + voice_clip.duration + outro_tail
 
-    # 1. Background Groove Music (Ducked so voice is crystal clear)
+    # 1. Background Groove Music (Ducked at -18dB so speech is crystal clear)
     music_temp = "music_temp.wav"
-    generate_nursery_music("groove", total_duration, music_temp, bpm=115)
-    music_clip = AudioFileClip(music_temp).volumex(0.20)
+    generate_nursery_music("groove", total_duration, music_temp, bpm=114)
+    music_clip = AudioFileClip(music_temp).volumex(0.18)
     voice_clip = voice_clip.volumex(1.0).set_start(intro_lead)
 
-    # 2. Foley SFX Cues
+    # 2. Narrative Foley Cues
     sfx_clips = [music_clip, voice_clip]
-
-    # Hook pop at 0.8s
-    sfx_clips.append(AudioFileClip("sfx_pop.wav").volumex(0.35).set_start(intro_lead + 0.5))
-    # Conflict snap whoosh at 11s
-    sfx_clips.append(AudioFileClip("sfx_whoosh.wav").volumex(0.30).set_start(intro_lead + 10.5))
-    # Disaster boing/snap at 23s
-    sfx_clips.append(AudioFileClip("sfx_boing.wav").volumex(0.35).set_start(intro_lead + 22.0))
-    # Payoff fanfare at 36s
-    sfx_clips.append(AudioFileClip("sfx_fanfare.wav").volumex(0.32).set_start(intro_lead + 35.0))
+    sfx_clips.append(AudioFileClip("sfx_pop.wav").volumex(0.32).set_start(intro_lead + 0.5))
+    sfx_clips.append(AudioFileClip("sfx_whoosh.wav").volumex(0.30).set_start(intro_lead + 10.0))
+    sfx_clips.append(AudioFileClip("sfx_boing.wav").volumex(0.35).set_start(intro_lead + 21.5))
+    sfx_clips.append(AudioFileClip("sfx_fanfare.wav").volumex(0.30).set_start(intro_lead + 34.0))
 
     composite_audio = CompositeAudioClip(sfx_clips).set_duration(total_duration)
     composite_audio.write_audiofile(output_soundtrack_path, fps=44100, logger=None)
-    print(f"Mastered Rick's Clips soundtrack: {output_soundtrack_path} ({total_duration:.1f}s)")
+    print(f"Soundtrack ready: {output_soundtrack_path} ({total_duration:.1f}s)")
     return total_duration
 
 # ==========================================
-# 2. RICKS CLIPS SCENE DIRECTOR & COMPOSITOR
+# 2. CONVERSATIONAL SCENE DIRECTOR
 # ==========================================
 class RicksClipsDirector:
     def __init__(self, episode: dict, total_duration: float, width=720, height=1280):
@@ -95,129 +91,163 @@ class RicksClipsDirector:
         self.width = width
         self.height = height
 
-        # Build 3D Studio Workshop Environment
-        print("Rendering Rick's Clips studio workshop environment...")
+        # Base Studio Stage (Opaque, clean dark theme)
         self.env_bg = create_studio_workshop_environment(width, height)
 
-        # Pre-render Technical Props
-        self.prop_normal_rail = create_railroad_diagram_prop((380, 260), hot_sun_kink=False)
-        self.prop_buckled_rail = create_railroad_diagram_prop((380, 260), hot_sun_kink=True)
+        # Pre-render Story Props for Dynamic Presentation Screen
+        print("Pre-rendering story visual props...")
+        self.prop_plane_flight = create_airplane_in_flight_prop((540, 280))
+        self.prop_square_stress = create_airplane_window_prop((540, 280), window_type="SQUARE_STRESS")
+        self.prop_oval_safe = create_airplane_window_prop((540, 280), window_type="OVAL_SAFE")
+        self.prop_rail_gap = create_railroad_diagram_prop((540, 280), hot_sun_kink=False)
+        self.prop_sun_kink = create_railroad_diagram_prop((540, 280), hot_sun_kink=True)
 
-        # Pre-render Character Archetype Sprites
+        # Pre-render Character Poses
         print("Pre-rendering Rick's Clips character rigs...")
-        self.char_narrator = render_ricks_clips_character(costume="NARRATOR", eye_expression="NEUTRAL", mouth_expression="SPEAKING", arm_pose="POINT_RIGHT")
-        self.char_boss_shocked = render_ricks_clips_character(costume="BOSS", eye_expression="WIDE_SHOCK", mouth_expression="TEETH_GRIMACE", arm_pose="SHOCKED_HANDS", sweat_drop=True, brow_angle=18.0)
-        self.char_engineer_warning = render_ricks_clips_character(costume="ENGINEER", eye_expression="SKEPTICAL", mouth_expression="SPEAKING", arm_pose="IDLE", brow_angle=10.0)
-        self.char_narrator_joy = render_ricks_clips_character(costume="NARRATOR", eye_expression="JOY_ARC", mouth_expression="SMILE", arm_pose="POINT_RIGHT")
+        self.char_narrator_talk = render_ricks_clips_character(costume="NARRATOR", eye_expression="NEUTRAL", mouth_expression="SPEAKING", arm_pose="POINT_RIGHT")
+        self.char_narrator_shock = render_ricks_clips_character(costume="NARRATOR", eye_expression="WIDE_SHOCK", mouth_expression="OPEN_O", arm_pose="SHOCKED_HANDS", sweat_drop=True, brow_angle=18.0)
+        self.char_narrator_smile = render_ricks_clips_character(costume="NARRATOR", eye_expression="JOY_ARC", mouth_expression="SMILE", arm_pose="POINT_RIGHT")
+        self.char_boss_angry = render_ricks_clips_character(costume="BOSS", eye_expression="WIDE_SHOCK", mouth_expression="TEETH_GRIMACE", arm_pose="SHOCKED_HANDS", sweat_drop=True, brow_angle=20.0)
+        self.char_engineer_skeptical = render_ricks_clips_character(costume="ENGINEER", eye_expression="SKEPTICAL", mouth_expression="SPEAKING", arm_pose="IDLE", brow_angle=12.0)
 
-        # Typography (Bold Sans-Serif with high legibility)
+        # Typography (Auto-scaling & clean fallback)
         try:
-            self.font_hook = ImageFont.truetype("DejaVuSans-Bold.ttf", 36)
-            self.font_caption = ImageFont.truetype("DejaVuSans-Bold.ttf", 34)
-            self.font_badge = ImageFont.truetype("DejaVuSans-Bold.ttf", 24)
+            self.font_header = ImageFont.truetype("DejaVuSans-Bold.ttf", 26)
+            self.font_hook = ImageFont.truetype("DejaVuSans-Bold.ttf", 28)
+            self.font_caption = ImageFont.truetype("DejaVuSans-Bold.ttf", 27)
+            self.font_badge = ImageFont.truetype("DejaVuSans-Bold.ttf", 20)
         except IOError:
             try:
-                self.font_hook = ImageFont.truetype("arialbd.ttf", 36)
-                self.font_caption = ImageFont.truetype("arialbd.ttf", 34)
-                self.font_badge = ImageFont.truetype("arialbd.ttf", 24)
+                self.font_header = ImageFont.truetype("arialbd.ttf", 26)
+                self.font_hook = ImageFont.truetype("arialbd.ttf", 28)
+                self.font_caption = ImageFont.truetype("arialbd.ttf", 27)
+                self.font_badge = ImageFont.truetype("arialbd.ttf", 20)
             except IOError:
-                self.font_hook = self.font_caption = self.font_badge = ImageFont.load_default()
+                self.font_header = self.font_hook = self.font_caption = self.font_badge = ImageFont.load_default()
 
     def render_frame(self, t: float) -> np.ndarray:
         frame = self.env_bg.copy()
         draw = ImageDraw.Draw(frame)
 
-        # Calculate current story beat
+        # Determine active beat
         beats = self.episode["beats"]
         num_beats = len(beats)
-        beat_dur = max(1.0, (self.total_duration - 1.5) / float(num_beats))
+        beat_dur = max(1.0, (self.total_duration - 1.0) / float(num_beats))
         cur_beat_idx = min(num_beats - 1, int(t / beat_dur))
         cur_beat = beats[cur_beat_idx]
 
-        # 1. Subtle Camera Snap-Zoom on Dramatic Beat 2 (Disaster)
-        is_disaster_beat = (cur_beat_idx == 2)
-        if is_disaster_beat:
-            zoom_scale = 1.05 + 0.02 * math.sin(t * 12.0)  # Subtle camera shake/zoom
+        # ----------------------------------------------------
+        # 1. TOP PARADOX HOOK CARD (Strictly Contained, 0s to 7s)
+        # ----------------------------------------------------
+        if t < 7.0:
+            card_x0, card_y0 = 50, 60
+            card_x1, card_y1 = self.width - 50, 165
+            # Card background
+            draw.rounded_rectangle([card_x0 + 4, card_y0 + 5, card_x1 + 4, card_y1 + 5], radius=18, fill=(0, 0, 0, 140))
+            draw.rounded_rectangle([card_x0, card_y0, card_x1, card_y1], radius=18, fill=(255, 214, 0), outline=(20, 20, 20), width=4)
+
+            # Badge pill
+            badge_w, badge_h = 320, 30
+            bx0 = (self.width - badge_w) // 2
+            draw.rounded_rectangle([bx0, card_y0 + 8, bx0 + badge_w, card_y0 + 8 + badge_h], radius=10, fill=(20, 20, 20))
+            draw.text(((bx0 + bx0 + badge_w) // 2, card_y0 + 23), "ENGINEERING PARADOX", fill=(255, 214, 0), font=self.font_badge, anchor="mm")
+
+            # Word-wrapped Hook Text strictly inside bounding box
+            draw_contained_text(
+                draw=draw,
+                text=self.episode["hook_line"],
+                box=(card_x0 + 15, card_y0 + 42, card_x1 - 15, card_y1 - 8),
+                font=self.font_hook,
+                fill_color=(194, 24, 91),
+                align="center"
+            )
+
+        # ----------------------------------------------------
+        # 2. DYNAMIC PRESENTATION SCREEN VISUALS (Upper Center)
+        # ----------------------------------------------------
+        screen_x = 90
+        screen_y = 230
+        ep_id = self.episode["id"]
+
+        if ep_id == "airplane_windows":
+            if cur_beat_idx == 0:
+                frame.alpha_composite(self.prop_plane_flight, (screen_x, screen_y))
+            elif cur_beat_idx in [1, 2]:
+                frame.alpha_composite(self.prop_square_stress, (screen_x, screen_y))
+            else:
+                frame.alpha_composite(self.prop_oval_safe, (screen_x, screen_y))
         else:
-            zoom_scale = 1.00
+            # Railroads or general engineering
+            if cur_beat_idx in [0, 1]:
+                frame.alpha_composite(self.prop_rail_gap, (screen_x, screen_y))
+            elif cur_beat_idx == 2:
+                frame.alpha_composite(self.prop_sun_kink, (screen_x, screen_y))
+            else:
+                frame.alpha_composite(self.prop_rail_gap, (screen_x, screen_y))
 
-        # 2. Dynamic Character Placement & Animation
-        # Gentle natural body idle bounce
-        idle_bounce = int(4 * math.sin(t * 5.0))
+        # ----------------------------------------------------
+        # 3. CONVERSATIONAL CHARACTER (Standing & Narrating)
+        # ----------------------------------------------------
+        idle_bounce = int(3 * math.sin(t * 6.0))
+        role = cur_beat["character_role"]
 
-        if cur_beat_idx == 0:
-            # Beat 1: Narrator introduces the paradox
-            char_sprite = self.char_narrator
-            char_x = (self.width - char_sprite.width) // 2
-            char_y = 480 + idle_bounce
-            frame.alpha_composite(char_sprite, (char_x, char_y))
-
-        elif cur_beat_idx == 1:
-            # Beat 2: Stubborn Boss demanding perfection
-            char_sprite = self.char_boss_shocked
-            char_x = int(self.width * 0.08)
-            char_y = 480 + idle_bounce
-            frame.alpha_composite(char_sprite, (char_x, char_y))
-
-            # Technical diagram on the right side
-            frame.alpha_composite(self.prop_normal_rail, (int(self.width * 0.44), 520))
-
+        if role == "BOSS":
+            char_sprite = self.char_boss_angry
+        elif role == "ENGINEER":
+            char_sprite = self.char_engineer_skeptical
         elif cur_beat_idx == 2:
-            # Beat 3: The Disaster / Sun Kink Buckling!
-            char_sprite = self.char_engineer_warning
-            char_x = int(self.width * 0.06)
-            char_y = 480 + idle_bounce
-            frame.alpha_composite(char_sprite, (char_x, char_y))
-
-            # Buckled Jagged Rail Prop with heat warning
-            frame.alpha_composite(self.prop_buckled_rail, (int(self.width * 0.44), 510))
-
-            # Comic impact marks
-            draw.text((char_x + 220, char_y + 60), "💥", font=self.font_hook)
-
+            char_sprite = self.char_narrator_shock
+        elif cur_beat_idx == 3:
+            char_sprite = self.char_narrator_smile
         else:
-            # Beat 4: Resolution & Lesson
-            char_sprite = self.char_narrator_joy
-            char_x = (self.width - char_sprite.width) // 2
-            char_y = 480 + idle_bounce
-            frame.alpha_composite(char_sprite, (char_x, char_y))
+            char_sprite = self.char_narrator_talk
 
-        # 3. Top Paradox Hook Badge (First 8 seconds)
-        if t < 8.0:
-            hook_w, hook_h = 660, 110
-            hx0 = (self.width - hook_w) // 2
-            hy0 = 60
-            draw.rounded_rectangle([hx0 + 4, hy0 + 6, hx0 + hook_w + 4, hy0 + hook_h + 6], radius=24, fill=(0, 0, 0, 90))
-            draw.rounded_rectangle([hx0, hy0, hx0 + hook_w, hy0 + hook_h], radius=24, fill=(255, 214, 0), outline=(20, 20, 20), width=5)
-            draw.text((self.width // 2, hy0 + 35), "⚡ WHY DO ENGINEERS DO THIS? ⚡", fill=(20, 20, 20), font=self.font_badge, anchor="mm")
-            draw.text((self.width // 2, hy0 + 75), self.episode["hook_line"][:40] + "...", fill=(216, 27, 96), font=self.font_caption, anchor="mm")
+        # Host Rick stands on the left/center foreground, gesturing towards the presentation screen
+        char_x = int(self.width * 0.22)
+        char_y = 520 + idle_bounce
+        frame.alpha_composite(char_sprite, (char_x, char_y))
 
-        # 4. Centered Kinetic Subtitles (Word-by-word active bounce)
+        # ----------------------------------------------------
+        # 4. CAPTION CARD (Strictly Contained, Multi-Line Wrapped)
+        # ----------------------------------------------------
         sentences = [s.strip() for s in cur_beat["narration"].split(".") if len(s.strip()) > 3]
         s_idx = min(len(sentences) - 1, int((t % beat_dur) / (beat_dur / max(1, len(sentences)))))
-        current_caption = sentences[s_idx]
+        current_sentence = sentences[s_idx]
 
-        # Subtitle Container Pill
-        card_w, card_h = 670, 175
-        cx0 = (self.width - card_w) // 2
-        cy0 = self.height - 240
+        # YouTube Shorts Safe Zone for Subtitles (Kept away from right-side buttons and bottom title)
+        card_x0 = 45
+        card_y0 = self.height - 290
+        card_x1 = self.width - 45
+        card_y1 = self.height - 120
 
-        draw.rounded_rectangle([cx0 + 4, cy0 + 6, cx0 + card_w + 4, cy0 + card_h + 6], radius=26, fill=(0, 0, 0, 95))
-        draw.rounded_rectangle([cx0, cy0, cx0 + card_w, cy0 + card_h], radius=26, fill=(20, 24, 33), outline=(97, 175, 239), width=5)
+        # High-contrast dark container pill with cyan border
+        draw.rounded_rectangle([card_x0 + 4, card_y0 + 5, card_x1 + 4, card_y1 + 5], radius=22, fill=(0, 0, 0, 160))
+        draw.rounded_rectangle([card_x0, card_y0, card_x1, card_y1], radius=22, fill=(18, 24, 38), outline=(97, 175, 239), width=4)
 
-        # Speaker Tag
-        role_label = f"🎙️ {cur_beat['character_role']}"
-        draw.rounded_rectangle([cx0 + 25, cy0 + 15, cx0 + 200, cy0 + 50], radius=10, fill=(97, 175, 239))
-        draw.text((cx0 + 112, cy0 + 32), role_label, fill=(20, 20, 20), font=self.font_badge, anchor="mm")
+        # Clean Speaker Badge (No missing emoji boxes!)
+        badge_text = f"SPEAKER: {role}"
+        draw.rounded_rectangle([card_x0 + 20, card_y0 + 12, card_x0 + 240, card_y0 + 42], radius=10, fill=(97, 175, 239))
+        draw.text((card_x0 + 130, card_y0 + 27), badge_text, fill=(15, 20, 25), font=self.font_badge, anchor="mm")
 
-        # Text with vibrant active bounce
-        bounce_scale = 1.0 + 0.02 * math.sin(t * 10.0)
-        draw.text((self.width // 2, cy0 + 110), current_caption, fill=(255, 255, 255), font=self.font_caption, anchor="mm")
+        # RENDER WORD-WRAPPED CAPTION (Never bleeds outside the container)
+        draw_contained_text(
+            draw=draw,
+            text=current_sentence,
+            box=(card_x0 + 25, card_y0 + 50, card_x1 - 25, card_y1 - 10),
+            font=self.font_caption,
+            fill_color=(255, 255, 255),
+            line_spacing=6,
+            align="center"
+        )
 
-        # Outro Safe Zone prompt (Last 2.5s)
+        # ----------------------------------------------------
+        # 5. OUTRO SUBSCRIBER BANNER (Last 2.5 seconds)
+        # ----------------------------------------------------
         if t >= self.total_duration - 2.5:
-            draw.rounded_rectangle([cx0 + 80, cy0 - 55, cx0 + card_w - 80, cy0 - 15], radius=15, fill=(255, 214, 0))
-            draw.text((self.width // 2, cy0 - 35), "🔔 Subscribe for Daily Mysteries! 🔔", fill=(20, 20, 20), font=self.font_badge, anchor="mm")
+            banner_x0, banner_y0 = 60, card_y0 - 55
+            banner_x1, banner_y1 = self.width - 60, card_y0 - 15
+            draw.rounded_rectangle([banner_x0, banner_y0, banner_x1, banner_y1], radius=14, fill=(255, 214, 0), outline=(20, 20, 20), width=3)
+            draw.text(((banner_x0 + banner_x1) // 2, (banner_y0 + banner_y1) // 2), "SUBSCRIBE FOR DAILY MYSTERIES!", fill=(20, 20, 20), font=self.font_badge, anchor="mm")
 
         # Convert to RGB array for MoviePy
         rgb_out = Image.new("RGB", (self.width, self.height), (255, 255, 255))
@@ -285,7 +315,7 @@ def upload_to_youtube(video_path: str, episode: dict) -> str:
         },
         "status": {
             "privacyStatus": privacy,
-            "selfDeclaredMadeForKids": False,  # General audience edutainment
+            "selfDeclaredMadeForKids": False,
         }
     }
 
@@ -314,7 +344,7 @@ def main():
     # 1. Voiceover
     asyncio.run(generate_narration(episode, voice_file))
 
-    # 2. Sound Design & Lo-Fi Groove Soundtrack
+    # 2. Sound Design & Mastered Soundtrack
     duration = build_soundtrack(episode, voice_file, soundtrack_file)
 
     # 3. Video Composition
