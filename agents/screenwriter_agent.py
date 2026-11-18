@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AGENT 1: SCREENWRITER AGENT (Google Flow / Gemini 2.0 Flash)
+AGENT 1: SCREENWRITER AGENT (Google Flow / Gemini API)
 Researches, structures, and writes viral 45-second micro-documentary scripts
 modeled after @RicksClips3000 (Rick's Clips).
 
@@ -79,12 +79,12 @@ You MUST reply ONLY with valid, clean JSON matching this exact schema:
 
 class ScreenwriterAgent:
     def __init__(self, api_key: str = None):
-        self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
+        self.api_key = api_key or os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_FLOW_ID") or os.environ.get("GOOGLE_FLOW_KEY")
 
     def write_script(self, topic: str = None) -> dict:
         """
         Executes the Screenwriter workflow:
-        1. Calls Google Gemini API if key is available.
+        1. Dynamically queries Google Gemini API.
         2. Validates structure, word count, and beats.
         3. Seamlessly falls back to curated episodes if network or key fails.
         """
@@ -104,18 +104,42 @@ class ScreenwriterAgent:
             except Exception as e:
                 print(f"[AGENT 1: SCREENWRITER] Gemini API call exception ({e}). Falling back to curated catalog.")
         else:
-            print("[AGENT 1: SCREENWRITER] GEMINI_API_KEY not detected. Using curated high-retention catalog.")
+            print("[AGENT 1: SCREENWRITER] GEMINI_API_KEY / GOOGLE_FLOW_ID not detected. Using curated high-retention catalog.")
 
         # Fallback to curated catalog
         episode = random.choice(RICKS_EPISODES)
         print(f"[AGENT 1: SCREENWRITER] Selected story from curated catalog: '{episode['title']}'")
         return episode
 
+    def _discover_models(self) -> list:
+        """Dynamically fetches active models supported by the user's API key."""
+        try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models?key={self.api_key}"
+            res = requests.get(url, timeout=8)
+            if res.status_code == 200:
+                data = res.json()
+                active = [
+                    m["name"] for m in data.get("models", [])
+                    if "generateContent" in m.get("supportedGenerationMethods", [])
+                ]
+                if active:
+                    # Sort flash models to the front
+                    flash_first = sorted(active, key=lambda x: ("flash" in x, x), reverse=True)
+                    print(f"[AGENT 1: SCREENWRITER] Discovered live models from Google API: {flash_first[:3]}")
+                    return flash_first
+        except Exception as e:
+            print(f"[AGENT 1: SCREENWRITER] Model discovery notice: {e}")
+
+        return ["models/gemini-2.5-flash", "models/gemini-1.5-flash", "models/gemini-pro"]
+
     def _generate_with_gemini(self, topic: str) -> dict:
-        candidate_models = ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-2.0-flash-exp", "gemini-1.5-pro"]
-        
-        for model in candidate_models:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={self.api_key}"
+        models = self._discover_models()
+
+        for model in models:
+            # Model names may already contain "models/" prefix
+            clean_model = model if model.startswith("models/") else f"models/{model}"
+            url = f"https://generativelanguage.googleapis.com/v1beta/{clean_model}:generateContent?key={self.api_key}"
+
             payload = {
                 "contents": [
                     {
@@ -139,12 +163,12 @@ class ScreenwriterAgent:
                         raw_text = raw_text.split("```json", 1)[1].rsplit("```", 1)[0].strip()
                     elif raw_text.startswith("```"):
                         raw_text = raw_text.split("```", 1)[1].rsplit("```", 1)[0].strip()
-                    print(f"[AGENT 1: SCREENWRITER] Google Gemini Flow success with {model}!")
+                    print(f"[AGENT 1: SCREENWRITER] Google Gemini Flow success with {clean_model}!")
                     return json.loads(raw_text)
                 else:
-                    print(f"[AGENT 1: SCREENWRITER] Gemini {model} returned {res.status_code}. Trying next candidate...")
+                    print(f"[AGENT 1: SCREENWRITER] Gemini {clean_model} returned {res.status_code}. Trying next candidate...")
             except Exception as e:
-                print(f"[AGENT 1: SCREENWRITER] Request error for {model}: {e}")
+                print(f"[AGENT 1: SCREENWRITER] Request error for {clean_model}: {e}")
 
         return None
 
@@ -156,10 +180,9 @@ class ScreenwriterAgent:
         if len(ep["beats"]) < 4:
             return False
 
-        # Validate total narration word count
         all_words = sum(len(b.get("narration", "").split()) for b in ep["beats"])
         print(f"[AGENT 1: SCREENWRITER] Script word count: {all_words} words (ideal: 110-135)")
-        return all_words >= 80  # Reasonable minimum for a 35-45s Short
+        return all_words >= 80
 
 if __name__ == "__main__":
     agent = ScreenwriterAgent()
