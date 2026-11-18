@@ -164,3 +164,82 @@ def create_railroad_diagram_prop(size=(520, 260), hot_sun_kink=False) -> Image.I
         draw.text((cx, h - 38), "Tracks twist and cause derailments!", fill=(255, 82, 82), anchor="mm")
 
     return img
+
+def create_bridge_diagram_prop(size=(520, 260), failure_mode=False) -> Image.Image:
+    """Visual diagram showing suspension bridge and expansion joints or resonance sway."""
+    img = Image.new("RGBA", size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+    w, h = size
+    cx, cy = w // 2, h // 2
+
+    draw.rounded_rectangle([15, 15, w - 15, h - 15], radius=16, fill=(20, 26, 36), outline=(97, 175, 239), width=3)
+
+    # Water below
+    draw.rectangle([20, cy + 50, w - 20, h - 20], fill=(24, 45, 68))
+
+    # Bridge Towers
+    t1_x, t2_x = cx - 130, cx + 130
+    draw.rectangle([t1_x - 14, cy - 70, t1_x + 14, cy + 55], fill=(180, 190, 205), outline=(30, 35, 45), width=2)
+    draw.rectangle([t2_x - 14, cy - 70, t2_x + 14, cy + 55], fill=(180, 190, 205), outline=(30, 35, 45), width=2)
+
+    # Suspension Cables
+    draw.arc([t1_x, cy - 110, t2_x, cy + 20], start=0, end=180, fill=(230, 235, 245), width=4)
+
+    if not failure_mode:
+        # Straight Roadway with Expansion Roller Joints
+        draw.rectangle([40, cy + 15, w - 40, cy + 28], fill=(90, 100, 115), outline=(30, 35, 45), width=2)
+        # Expansion Roller Bearing Callout
+        draw.ellipse([cx - 15, cy + 28, cx + 15, cy + 46], fill=(255, 214, 0), outline=(30, 35, 45), width=3)
+        draw.text((cx, 38), "SEISMIC EXPANSION BEARINGS", fill=(97, 175, 239), anchor="mm")
+        draw.text((cx, h - 38), "Rollers absorb sway & temperature drift", fill=(152, 195, 121), anchor="mm")
+    else:
+        # Twisted Resonating Roadway (Tacoma Narrows style)
+        twisted_pts = [(40, cy + 20), (cx - 70, cy - 5), (cx, cy + 42), (cx + 70, cy - 5), (w - 40, cy + 20)]
+        draw.line(twisted_pts, fill=(255, 82, 82), width=8)
+        draw.text((cx, 38), "HARMONIC RESONANCE COLLAPSE", fill=(229, 57, 53), anchor="mm")
+        draw.text((cx, h - 38), "Without dampers, wind twists the bridge!", fill=(255, 82, 82), anchor="mm")
+
+    return img
+
+def create_technical_blueprint_prop(size=(520, 260), title="TECHNICAL SCHEMATIC", subtitle="PHYSICS & FORCE ANALYSIS", mode="NORMAL") -> Image.Image:
+    """Dynamic high-tech CAD blueprint diagram for any general science/engineering story."""
+    img = Image.new("RGBA", size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+    w, h = size
+    cx, cy = w // 2, h // 2
+
+    # Blueprint Card
+    draw.rounded_rectangle([15, 15, w - 15, h - 15], radius=16, fill=(15, 22, 34), outline=(97, 175, 239), width=3)
+
+    # CAD Grid
+    for gx in range(35, w - 20, 30):
+        draw.line([(gx, 45), (gx, h - 45)], fill=(30, 48, 70), width=1)
+    for gy in range(45, h - 20, 30):
+        draw.line([(35, gy), (w - 35, gy)], fill=(30, 48, 70), width=1)
+
+    # Header
+    draw.text((cx, 38), title.upper()[:32], fill=(97, 175, 239), anchor="mm")
+
+    # Schematic Vector Graphics (Center Circle with Force Vectors)
+    if mode == "DISASTER":
+        # Red warning vectors
+        draw.ellipse([cx - 60, cy - 40, cx + 60, cy + 40], outline=(229, 57, 53), width=4)
+        for ang in [0, 45, 90, 135, 180, 225, 270, 315]:
+            rad = math.radians(ang)
+            x0 = cx + int(45 * math.cos(rad))
+            y0 = cy + int(30 * math.sin(rad))
+            x1 = cx + int(75 * math.cos(rad))
+            y1 = cy + int(50 * math.sin(rad))
+            draw.line([(x0, y0), (x1, y1)], fill=(255, 82, 82), width=3)
+        draw.text((cx, cy), "CRITICAL STRESS", fill=(255, 214, 0), anchor="mm")
+        draw.text((cx, h - 38), subtitle[:40], fill=(255, 82, 82), anchor="mm")
+    else:
+        # Green / Cyan balanced force distribution
+        draw.ellipse([cx - 70, cy - 45, cx + 70, cy + 45], outline=(76, 175, 80), width=4)
+        draw.arc([cx - 85, cy - 55, cx + 85, cy + 55], start=0, end=360, fill=(97, 175, 239), width=2)
+        draw.line([(cx - 95, cy), (cx + 95, cy)], fill=(97, 175, 239), width=2)
+        draw.line([(cx, cy - 60), (cx, cy + 60)], fill=(97, 175, 239), width=2)
+        draw.text((cx, cy), "STABLE EQUILIBRIUM", fill=(152, 195, 121), anchor="mm")
+        draw.text((cx, h - 38), subtitle[:40], fill=(152, 195, 121), anchor="mm")
+
+    return img
