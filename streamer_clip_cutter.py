@@ -32,6 +32,7 @@ def download_stream_slice(youtube_url: str, start_time: str, end_time: str, outp
         sys.executable, "-m", "yt_dlp",
         "--download-sections", f"*{start_time}-{end_time}",
         "--force-keyframes-at-cuts",
+        "--remote-components", "ejs:github",
         "-f", "bestvideo[height<=720]+bestaudio/best[height<=720]/best",
         "--merge-output-format", "mp4",
         "-o", output_path,
