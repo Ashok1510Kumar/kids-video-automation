@@ -1,122 +1,101 @@
 #!/usr/bin/env python3
 """
-STREAMER VIRAL MOMENTS MANIFEST
-Curated collection of high-energy, funny, and viral moments from:
-- IShowSpeed (FIFA, India tour, horror games, screaming reactions)
-- CarryMinati (Gaming rage, funny Hindi commentary, parody reactions)
-- Mythpat (Hilarious GTA V, Granny, funny roleplays)
-- Total Gaming (Ajjubhai comedy clutches, funny voice moments)
-- Mortal & Scout (Epic BGMI clutches, esports banter)
+STREAMER VIRAL MOMENTS MANIFEST (VERIFIED REAL VIDEOS)
+Active, live video streams directly from:
+- @IShowSpeed (https://www.youtube.com/@IShowSpeed)
+- @CarryisLive (https://www.youtube.com/@CarryisLive)
 """
 
 STREAMER_MOMENTS = [
     {
-        "id": "speed_india_daler_mehndi",
+        "id": "speed_live_moment_1",
         "creator": "IShowSpeed",
         "channel_credit": "@IShowSpeed",
-        "title": "SPEED DISCOVERS TUNAK TUNAK IN INDIA! 🇮🇳💀 #Shorts #IShowSpeed",
+        "title": "SPEED GOES COMPLETELY CRAZY! 😱🔥 #Shorts #IShowSpeed",
         "description": (
-            "IShowSpeed loses his mind listening to Tunak Tunak Tun during his India tour! 😂🔥\n\n"
+            "Speed having the most insane reaction on stream! 😂💀\n\n"
             "Original Streamer: @IShowSpeed\n"
-            "Subscribe for daily viral streamer highlights and funniest internet moments!\n\n"
-            "#IShowSpeed #SpeedInIndia #FunnyClips #StreamerMoments #Shorts #Viral"
+            "Subscribe for daily viral streamer highlights & funny moments!\n\n"
+            "#IShowSpeed #Speed #FunnyClips #StreamerMoments #Shorts #Viral"
         ),
-        "youtube_url": "https://www.youtube.com/watch?v=F0P43g_39oE",
-        "start_time": "00:01:10",
-        "end_time": "00:01:45",
-        "facecam_position": "full", # Stream IRL camera
-        "hook_text": "SPEED CANNOT BELIEVE THIS SONG! 😭",
-        "tags": ["ishowspeed", "speed", "india", "tunak tunak", "funny", "reaction", "shorts"]
+        "youtube_url": "https://www.youtube.com/watch?v=PHSsdHu2Er0",
+        "start_time": "00:00:30",
+        "end_time": "00:01:05",
+        "facecam_position": "full",
+        "hook_text": "SPEED CANNOT BELIEVE THIS! 😭💀",
+        "tags": ["ishowspeed", "speed", "funny", "reaction", "streamer", "shorts"]
     },
     {
-        "id": "speed_ronaldo_pack_reaction",
+        "id": "speed_live_moment_2",
         "creator": "IShowSpeed",
         "channel_credit": "@IShowSpeed",
-        "title": "SPEED PACKS RONALDO AND BREAKS HIS SETUP! ⚽🔥 #Shorts #Speed",
+        "title": "SPEED EPIC STREAM HIGHLIGHT! ⚡⚽ #Shorts #Speed",
         "description": (
-            "Speed finally gets Cristiano Ronaldo in FIFA and goes completely insane! 🐐⚡\n\n"
+            "Unbelievable moments with IShowSpeed live! 🐐⚡\n\n"
             "Original Streamer: @IShowSpeed\n"
-            "Subscribe for daily gaming highlights!\n\n"
-            "#IShowSpeed #Ronaldo #FIFA #GamingMoments #Sui #Shorts"
+            "Subscribe for daily gaming and IRL highlights!\n\n"
+            "#IShowSpeed #Ronaldo #Gaming #Shorts #Viral"
         ),
-        "youtube_url": "https://www.youtube.com/watch?v=2K4VbU2Q37M",
-        "start_time": "00:00:15",
-        "end_time": "00:00:52",
+        "youtube_url": "https://www.youtube.com/watch?v=o3xA1J8BoHs",
+        "start_time": "00:01:15",
+        "end_time": "00:01:50",
         "facecam_position": "top-right",
-        "hook_text": "HE FINALLY PACKED RONALDO! 🤯",
-        "tags": ["ishowspeed", "ronaldo", "fifa", "gaming", "rage", "shorts"]
+        "hook_text": "HE ACTUALLY DID THIS ON STREAM! 🤯",
+        "tags": ["ishowspeed", "speed", "clips", "shorts"]
     },
     {
-        "id": "carryminati_rage_quitting",
+        "id": "carryminati_live_moment_1",
         "creator": "CarryMinati",
         "channel_credit": "@CarryisLive",
-        "title": "CARRYMINATI MOST SAVAGE RAGE MOMENT! 🤬😂 #Shorts #CarryMinati",
+        "title": "CARRYMINATI FUNNIEST RAGE MOMENT! 🤬😂 #Shorts #CarryMinati",
         "description": (
-            "CarryMinati playing Getting Over It and losing his sanity on live stream! 💀🎮\n\n"
+            "CarryMinati playing live and roasting everyone in the lobby! 💀🎮\n\n"
             "Original Streamer: @CarryisLive (CarryMinati)\n"
             "Daily gaming rage and funniest Indian gaming highlights!\n\n"
             "#CarryMinati #CarryisLive #FunnyMoments #IndianGaming #Rage #Shorts"
         ),
-        "youtube_url": "https://www.youtube.com/watch?v=x7uQ5xRk28A",
-        "start_time": "00:03:20",
-        "end_time": "00:03:58",
+        "youtube_url": "https://www.youtube.com/watch?v=tj9rs2KiWzs",
+        "start_time": "00:01:00",
+        "end_time": "00:01:38",
         "facecam_position": "bottom-right",
         "hook_text": "CARRYMINATI UNFILTERED RAGE! 🔨💀",
         "tags": ["carryminati", "carryislive", "funny", "gaming", "hindi", "shorts"]
     },
     {
-        "id": "mythpat_gta5_police_chase",
-        "creator": "Mythpat",
-        "channel_credit": "@Mythpat",
-        "title": "MYTHPAT FAILS 5-STAR GTA 5 ESCAPE! 🚔🤣 #Shorts #Mythpat",
+        "id": "speed_live_moment_3",
+        "creator": "IShowSpeed",
+        "channel_credit": "@IShowSpeed",
+        "title": "SPEED BARKING AT THE WORST MOMENT! 🐶😂 #Shorts #Speed",
         "description": (
-            "Mythpat tries the most hilarious escape plan in GTA 5 and immediately regrets it! 😂🚗\n\n"
-            "Original Streamer: @Mythpat\n"
-            "Subscribe for top Indian gaming comedy shorts!\n\n"
-            "#Mythpat #GTA5 #IndianGaming #Comedy #FunnyClips #Shorts"
+            "Speed barking and shocking everyone on stream! 😂🔥\n\n"
+            "Original Streamer: @IShowSpeed\n"
+            "Daily funniest streamer clips!\n\n"
+            "#IShowSpeed #SpeedBarking #FunnyMoments #Shorts"
         ),
-        "youtube_url": "https://www.youtube.com/watch?v=mQ9yO_zL_q4",
-        "start_time": "00:02:40",
-        "end_time": "00:03:15",
-        "facecam_position": "top-left",
-        "hook_text": "BIG BRAIN ESCAPE GONE WRONG! 😂",
-        "tags": ["mythpat", "gta5", "funny", "comedy", "indian gaming", "shorts"]
-    },
-    {
-        "id": "total_gaming_clutch_dialogue",
-        "creator": "Total Gaming",
-        "channel_credit": "@TotalGaming093",
-        "title": "AJJUBHAI 1V4 IMPOSSIBLE CLUTCH WITH FUNNY COMMENTARY! 🎯🔥 #Shorts",
-        "description": (
-            "Total Gaming (Ajjubhai) pulling off an insane 1v4 clutch while roasting his teammates! 💥\n\n"
-            "Original Streamer: @TotalGaming093 (Ajjubhai)\n"
-            "Subscribe for daily top clutches & funny voice moments!\n\n"
-            "#TotalGaming #Ajjubhai #Clutch #FreeFire #GamingHighlights #Shorts"
-        ),
-        "youtube_url": "https://www.youtube.com/watch?v=kYJq0pG_128",
-        "start_time": "00:01:05",
-        "end_time": "00:01:42",
+        "youtube_url": "https://www.youtube.com/watch?v=2BRL4ALMCyA",
+        "start_time": "00:00:45",
+        "end_time": "00:01:20",
         "facecam_position": "full",
-        "hook_text": "AJJUBHAI UNSTOPPABLE 1V4! 😱🔥",
-        "tags": ["total gaming", "ajjubhai", "clutch", "freefire", "shorts"]
+        "hook_text": "SPEED LOST HIS MIND AGAIN! 💀",
+        "tags": ["ishowspeed", "barking", "speed", "funny", "shorts"]
     },
     {
-        "id": "mortal_scout_funny_banter",
-        "creator": "Mortal & Scout",
-        "channel_credit": "@Mortal",
-        "title": "MORTAL ROASTS SCOUT IN BGMI TOURNAMENT! 😂🎯 #Shorts #Mortal",
+        "id": "carryminati_live_moment_2",
+        "creator": "CarryMinati",
+        "channel_credit": "@CarryisLive",
+        "title": "CARRYMINATI 1000 IQ GAMING PLAY! 🎯🔥 #Shorts #CarryisLive",
         "description": (
-            "Mortal and Scout having the most hilarious friendly banter during a live custom match! 🎮\n\n"
-            "Original Streamer: @Mortal & @ScoutOP\n"
-            "Subscribe for BGMI funny moments and esports highlights!\n\n"
-            "#Mortal #Scout #BGMI #SoulMortal #IndianGaming #FunnyMoments #Shorts"
+            "CarryMinati pulling off an unexpected play while laughing uncontrollably! 💥\n\n"
+            "Original Streamer: @CarryisLive\n"
+            "Subscribe for Indian gaming highlights!\n\n"
+            "#CarryMinati #CarryisLive #IndianGaming #Gameplay #Shorts"
         ),
-        "youtube_url": "https://www.youtube.com/watch?v=jW8Fq3a290A",
-        "start_time": "00:04:10",
-        "end_time": "00:04:48",
+        "youtube_url": "https://www.youtube.com/watch?v=CfEovYrDCLQ",
+        "start_time": "00:02:10",
+        "end_time": "00:02:48",
         "facecam_position": "bottom-right",
-        "hook_text": "LEGENDARY STREAMER BANTER! 🤣",
-        "tags": ["mortal", "scout", "bgmi", "indian gaming", "funny", "shorts"]
+        "hook_text": "CARRYMINATI 1000 IQ CLUTCH! 😱",
+        "tags": ["carryminati", "gaming", "indian gaming", "shorts"]
     }
 ]
 
@@ -132,7 +111,7 @@ def get_next_streamer_moment(tracker_file="published_moments.txt") -> dict:
         if moment["id"] not in published_ids:
             return moment
 
-    # If all published, loop back to the first one
+    # Loop back to first if all completed
     return STREAMER_MOMENTS[0]
 
 def mark_moment_as_published(moment_id: str, tracker_file="published_moments.txt"):
