@@ -75,33 +75,39 @@ def generate_script_with_gemini(api_key: str) -> dict:
     topic = random.choice(TOPIC_PROMPTS)
     print(f"Calling Google Gemini Flow for topic: '{topic}'...")
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
-    payload = {
-        "contents": [
-            {
-                "parts": [
-                    {"text": f"{SYSTEM_PROMPT}\n\nWrite an episode about: {topic}"}
-                ]
+    candidate_models = ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-2.0-flash-exp", "gemini-1.5-pro"]
+    for model in candidate_models:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+        payload = {
+            "contents": [
+                {
+                    "parts": [
+                        {"text": f"{SYSTEM_PROMPT}\n\nWrite an episode about: {topic}"}
+                    ]
+                }
+            ],
+            "generationConfig": {
+                "temperature": 0.7,
+                "responseMimeType": "application/json"
             }
-        ],
-        "generationConfig": {
-            "temperature": 0.7,
-            "responseMimeType": "application/json"
         }
-    }
 
-    try:
-        res = requests.post(url, json=payload, timeout=25)
-        if res.status_code == 200:
-            data = res.json()
-            raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
-            script_json = json.loads(raw_text)
-            print(f"Google Gemini generated script: '{script_json.get('title')}'")
-            return script_json
-        else:
-            print(f"Gemini API returned error ({res.status_code}): {res.text}")
-    except Exception as e:
-        print(f"Gemini generation exception: {e}")
+        try:
+            res = requests.post(url, json=payload, timeout=25)
+            if res.status_code == 200:
+                data = res.json()
+                raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
+                if raw_text.startswith("```json"):
+                    raw_text = raw_text.split("```json", 1)[1].rsplit("```", 1)[0].strip()
+                elif raw_text.startswith("```"):
+                    raw_text = raw_text.split("```", 1)[1].rsplit("```", 1)[0].strip()
+                script_json = json.loads(raw_text)
+                print(f"Google Gemini generated script using {model}: '{script_json.get('title')}'")
+                return script_json
+            else:
+                print(f"Gemini {model} returned ({res.status_code}): {res.text}. Trying next candidate...")
+        except Exception as e:
+            print(f"Gemini generation exception on {model}: {e}")
 
     return None
 
