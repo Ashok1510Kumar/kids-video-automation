@@ -1,0 +1,161 @@
+#!/usr/bin/env python3
+"""
+AGENT 1: SCREENWRITER AGENT (Google Flow / Gemini 2.0 Flash)
+Researches, structures, and writes viral 45-second micro-documentary scripts
+modeled after @RicksClips3000 (Rick's Clips).
+
+Story Structure:
+1. Beat 1: The Paradox Hook (0-6s) - Counter-intuitive mystery or question.
+2. Beat 2: The Common Sense Trap (6-20s) - Why intuitive thinking fails; stubborn boss/engineer demand.
+3. Beat 3: The Scientific Breakdown (20-38s) - Physics, engineering disaster, or underlying mechanism.
+4. Beat 4: The Genius Solution / Punchline (38-45s) - Clever payoff and witty takeaway.
+"""
+
+import os
+import json
+import random
+import requests
+from stories_rick import RICKS_EPISODES
+
+CURATED_TOPICS = [
+    "Why airplane windows are oval instead of square (The 1954 Comet crashes)",
+    "Why engineers deliberately leave gaps between steel train tracks (Sun kinks)",
+    "Why bridges have giant rubber shock absorbers or expansion rollers underneath them",
+    "Why nuclear cooling towers are shaped like giant curved hourglasses",
+    "Why submarine hulls are circular cylinders instead of rectangular ships",
+    "Why highway overpasses are intentionally built in zig-zag shapes in earthquake zones",
+    "Why bullet trains in Japan were redesigned with kingfisher bird beaks to stop sonic booms",
+    "Why elevator cables are designed to hold 10 times the weight of the elevator cab",
+    "Why ancient Roman aqueducts survived 2,000 years without modern steel reinforcement",
+    "Why cruise ship hulls have a giant bulbous nose underwater at the front",
+    "Why skyscraper windows are made of double-pane tempered glass that can flex in hurricanes"
+]
+
+SYSTEM_PROMPT = """You are the master screenwriter for a viral YouTube Shorts channel modeled after @RicksClips3000.
+Your specialty is fascinating engineering paradoxes, weird design choices, and historical technology mysteries.
+
+STRICT FORMAT & PACING RULES:
+1. Total length: Exactly 110 to 130 words (at 175 words per minute, this takes exactly 40-45 seconds).
+2. The Hook (0-6s): A punchy paradox question that immediately stops the user from scrolling.
+3. The Conflict / Trap (6-20s): Introduce a character dialogue (like an impatient tycoon or intuitive designer) making a common-sense demand.
+4. The Technical / Scientific Payoff (20-38s): Clear physical demonstration of why the flaw or weird design is actually pure engineering genius.
+5. The Punchline / Lesson (38-45s): Snappy, memorable conclusion.
+
+You MUST reply ONLY with valid, clean JSON matching this exact schema:
+{
+  "id": "slug_topic",
+  "title": "Short descriptive topic title",
+  "youtube_title": "Catchy YouTube Title with Emojis #Shorts #Engineering",
+  "hook_line": "The opening paradox question (under 12 words)",
+  "beats": [
+    {
+      "beat_name": "THE PARADOX HOOK",
+      "character_role": "NARRATOR",
+      "narration": "First sentence posing the paradox.",
+      "prop_type": "NORMAL"
+    },
+    {
+      "beat_name": "THE COMMON SENSE TRAP",
+      "character_role": "BOSS",
+      "narration": "The intuitive demand or common mistake.",
+      "prop_type": "NORMAL"
+    },
+    {
+      "beat_name": "THE DISASTER & SCIENCE",
+      "character_role": "ENGINEER",
+      "narration": "The physical consequence and why physics requires this design.",
+      "prop_type": "DISASTER"
+    },
+    {
+      "beat_name": "THE PUNCHLINE",
+      "character_role": "NARRATOR",
+      "narration": "The witty engineering moral of the story.",
+      "prop_type": "NORMAL"
+    }
+  ],
+  "tags": ["engineering", "science", "curiosity", "history", "fun facts", "ricksclips", "shorts"]
+}
+"""
+
+class ScreenwriterAgent:
+    def __init__(self, api_key: str = None):
+        self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
+
+    def write_script(self, topic: str = None) -> dict:
+        """
+        Executes the Screenwriter workflow:
+        1. Calls Google Gemini API if key is available.
+        2. Validates structure, word count, and beats.
+        3. Seamlessly falls back to curated episodes if network or key fails.
+        """
+        if not topic:
+            topic = random.choice(CURATED_TOPICS)
+
+        print(f"[AGENT 1: SCREENWRITER] Brainstorming story on topic: '{topic}'...")
+
+        if self.api_key:
+            try:
+                episode = self._generate_with_gemini(topic)
+                if episode and self._validate_episode(episode):
+                    print(f"[AGENT 1: SCREENWRITER] Successfully generated script via Google Flow: '{episode.get('title')}'")
+                    return episode
+                else:
+                    print("[AGENT 1: SCREENWRITER] Gemini response did not meet strict quality checks. Using curated catalog.")
+            except Exception as e:
+                print(f"[AGENT 1: SCREENWRITER] Gemini API call exception ({e}). Falling back to curated catalog.")
+        else:
+            print("[AGENT 1: SCREENWRITER] GEMINI_API_KEY not detected. Using curated high-retention catalog.")
+
+        # Fallback to curated catalog
+        episode = random.choice(RICKS_EPISODES)
+        print(f"[AGENT 1: SCREENWRITER] Selected story from curated catalog: '{episode['title']}'")
+        return episode
+
+    def _generate_with_gemini(self, topic: str) -> dict:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={self.api_key}"
+        payload = {
+            "contents": [
+                {
+                    "parts": [
+                        {"text": f"{SYSTEM_PROMPT}\n\nWrite an episode about: {topic}"}
+                    ]
+                }
+            ],
+            "generationConfig": {
+                "temperature": 0.7,
+                "responseMimeType": "application/json"
+            }
+        }
+
+        res = requests.post(url, json=payload, timeout=25)
+        if res.status_code == 200:
+            data = res.json()
+            raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
+            # Clean possible markdown wrap
+            if raw_text.startswith("```json"):
+                raw_text = raw_text.split("```json", 1)[1].rsplit("```", 1)[0].strip()
+            elif raw_text.startswith("```"):
+                raw_text = raw_text.split("```", 1)[1].rsplit("```", 1)[0].strip()
+            return json.loads(raw_text)
+        else:
+            print(f"[AGENT 1: SCREENWRITER] Gemini API error: {res.status_code} - {res.text}")
+            return None
+
+    def _validate_episode(self, ep: dict) -> bool:
+        if not isinstance(ep, dict):
+            return False
+        if not ep.get("title") or not ep.get("hook_line") or not ep.get("beats"):
+            return False
+        if len(ep["beats"]) < 4:
+            return False
+
+        # Validate total narration word count
+        all_words = sum(len(b.get("narration", "").split()) for b in ep["beats"])
+        print(f"[AGENT 1: SCREENWRITER] Script word count: {all_words} words (ideal: 110-135)")
+        return all_words >= 80  # Reasonable minimum for a 35-45s Short
+
+if __name__ == "__main__":
+    agent = ScreenwriterAgent()
+    script = agent.write_script()
+    print("Script preview:")
+    print(json.dumps(script, indent=2))
