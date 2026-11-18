@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-RICKS CLIPS PRODUCTION PIPELINE (@RicksClips3000 Edition)
+RICKS CLIPS PRODUCTION PIPELINE (GOOGLE FLOW + 30FPS SMOOTH MOTION)
 Features:
-- Pure floating YouTube Shorts captions with bold black stroke (NO BOXES, NO BORDERS)
-- Conversational documentary presentation (Rick narrating beside a dynamic visual display)
-- Illustrated story props (Comet airliner, square stress corners, curved oval windows, railroad sun kinks)
-- Multi-character voice acting & syncopated lo-fi groove audio
-- YouTube Shorts safe zone adherence (all critical visuals kept inside safe margins)
+- Google Gemini Flow: Dynamically researches & generates high-retention paradox scripts
+- Silky-Smooth 30 FPS Render with cubic easing and alpha cross-dissolves
+- Pure floating viral captions with bold black stroke (NO BOXES)
+- Conversational documentary presentation with dynamic visual display
+- YouTube Shorts safe zone adherence
 """
 
 import os
@@ -30,7 +30,7 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 
 # Studio Modules
-from stories_rick import RICKS_EPISODES
+from script_generator import get_daily_episode
 from character_rick import render_ricks_clips_character
 from environment_rick import (
     create_studio_workshop_environment,
@@ -39,6 +39,7 @@ from environment_rick import (
     create_railroad_diagram_prop
 )
 from draw_utils import draw_floating_subtitles
+from smooth_motion import ease_in_out_quad, smooth_crossfade
 from music_generator import generate_nursery_music
 from sfx_generator import generate_all_sfx
 
@@ -82,7 +83,7 @@ def build_soundtrack(episode: dict, voice_path: str, output_soundtrack_path: str
     return total_duration
 
 # ==========================================
-# 2. CONVERSATIONAL SCENE DIRECTOR
+# 2. CONVERSATIONAL SCENE DIRECTOR (30 FPS)
 # ==========================================
 class RicksClipsDirector:
     def __init__(self, episode: dict, total_duration: float, width=720, height=1280):
@@ -110,7 +111,7 @@ class RicksClipsDirector:
         self.char_boss_angry = render_ricks_clips_character(costume="BOSS", eye_expression="WIDE_SHOCK", mouth_expression="TEETH_GRIMACE", arm_pose="SHOCKED_HANDS", sweat_drop=True, brow_angle=20.0)
         self.char_engineer_skeptical = render_ricks_clips_character(costume="ENGINEER", eye_expression="SKEPTICAL", mouth_expression="SPEAKING", arm_pose="IDLE", brow_angle=12.0)
 
-        # Typography (Auto-scaling & clean fallback)
+        # Typography
         try:
             self.font_hook = ImageFont.truetype("DejaVuSans-Bold.ttf", 32)
             self.font_caption = ImageFont.truetype("DejaVuSans-Bold.ttf", 32)
@@ -123,6 +124,26 @@ class RicksClipsDirector:
             except IOError:
                 self.font_hook = self.font_caption = self.font_badge = ImageFont.load_default()
 
+    def get_current_props(self, cur_beat_idx: int, t_in_beat: float, beat_dur: float) -> Image.Image:
+        """Returns the active prop image with smooth alpha cross-dissolves."""
+        ep_id = self.episode.get("id", "")
+        # Select prop based on episode theme
+        if "plane" in ep_id or "window" in ep_id or "air" in ep_id:
+            props = [self.prop_plane_flight, self.prop_square_stress, self.prop_square_stress, self.prop_oval_safe]
+        else:
+            props = [self.prop_rail_gap, self.prop_rail_gap, self.prop_sun_kink, self.prop_rail_gap]
+
+        cur_prop = props[min(len(props) - 1, cur_beat_idx)]
+
+        # Smooth cross-fade transition in first 0.5s of new beat
+        transition_duration = 0.5
+        if cur_beat_idx > 0 and t_in_beat < transition_duration:
+            prev_prop = props[cur_beat_idx - 1]
+            progress = t_in_beat / transition_duration
+            return smooth_crossfade(prev_prop, cur_prop, progress)
+
+        return cur_prop
+
     def render_frame(self, t: float) -> np.ndarray:
         frame = self.env_bg.copy()
         draw = ImageDraw.Draw(frame)
@@ -132,6 +153,7 @@ class RicksClipsDirector:
         num_beats = len(beats)
         beat_dur = max(1.0, (self.total_duration - 1.0) / float(num_beats))
         cur_beat_idx = min(num_beats - 1, int(t / beat_dur))
+        t_in_beat = t % beat_dur
         cur_beat = beats[cur_beat_idx]
 
         # ----------------------------------------------------
@@ -151,32 +173,19 @@ class RicksClipsDirector:
             )
 
         # ----------------------------------------------------
-        # 2. DYNAMIC PRESENTATION SCREEN VISUALS (Upper Center)
+        # 2. DYNAMIC PRESENTATION SCREEN (SMOOTH CROSS-DISSOLVES)
         # ----------------------------------------------------
         screen_x = 90
         screen_y = 230
-        ep_id = self.episode["id"]
-
-        if ep_id == "airplane_windows":
-            if cur_beat_idx == 0:
-                frame.alpha_composite(self.prop_plane_flight, (screen_x, screen_y))
-            elif cur_beat_idx in [1, 2]:
-                frame.alpha_composite(self.prop_square_stress, (screen_x, screen_y))
-            else:
-                frame.alpha_composite(self.prop_oval_safe, (screen_x, screen_y))
-        else:
-            if cur_beat_idx in [0, 1]:
-                frame.alpha_composite(self.prop_rail_gap, (screen_x, screen_y))
-            elif cur_beat_idx == 2:
-                frame.alpha_composite(self.prop_sun_kink, (screen_x, screen_y))
-            else:
-                frame.alpha_composite(self.prop_rail_gap, (screen_x, screen_y))
+        active_prop = self.get_current_props(cur_beat_idx, t_in_beat, beat_dur)
+        frame.alpha_composite(active_prop, (screen_x, screen_y))
 
         # ----------------------------------------------------
-        # 3. CONVERSATIONAL CHARACTER (Standing & Narrating)
+        # 3. CONVERSATIONAL CHARACTER (SMOOTH EASING & SWAY)
         # ----------------------------------------------------
-        idle_bounce = int(3 * math.sin(t * 6.0))
-        role = cur_beat["character_role"]
+        # Smooth harmonic breathing & idle motion
+        idle_bounce = int(3.5 * math.sin(t * 5.0))
+        role = cur_beat.get("character_role", "NARRATOR")
 
         if role == "BOSS":
             char_sprite = self.char_boss_angry
@@ -189,7 +198,6 @@ class RicksClipsDirector:
         else:
             char_sprite = self.char_narrator_talk
 
-        # Host Rick stands on the left/center foreground, gesturing towards the presentation screen
         char_x = int(self.width * 0.22)
         char_y = 520 + idle_bounce
         frame.alpha_composite(char_sprite, (char_x, char_y))
@@ -198,7 +206,9 @@ class RicksClipsDirector:
         # 4. PURE FLOATING VIRAL SUBTITLES (NO BOXES, NO BORDERS)
         # ----------------------------------------------------
         sentences = [s.strip() for s in cur_beat["narration"].split(".") if len(s.strip()) > 3]
-        s_idx = min(len(sentences) - 1, int((t % beat_dur) / (beat_dur / max(1, len(sentences)))))
+        if not sentences:
+            sentences = [cur_beat["narration"]]
+        s_idx = min(len(sentences) - 1, int(t_in_beat / (beat_dur / max(1, len(sentences)))))
         current_sentence = sentences[s_idx]
 
         # Draw clean, floating, outlined subtitles directly on screen
@@ -234,22 +244,23 @@ class RicksClipsDirector:
         return np.array(rgb_out)
 
 def render_ricks_video(episode: dict, audio_path: str, output_path: str, duration: float):
-    """Composites the complete Rick's Clips style animated short."""
-    print("Beginning Rick's Clips video composition...")
+    """Composites the complete Rick's Clips style animated short at 30 FPS."""
+    print("Beginning Rick's Clips video composition (30 FPS Smooth Motion)...")
     director = RicksClipsDirector(episode, duration, width=720, height=1280)
 
     audio_clip = AudioFileClip(audio_path)
+    # Upgraded from 24 FPS to 30 FPS for silky-smooth fluid motion!
     video = VideoClip(lambda t: director.render_frame(t), duration=duration).set_audio(audio_clip)
 
     video.write_videofile(
         output_path,
-        fps=24,
+        fps=30,
         codec="libx264",
         audio_codec="aac",
         preset="ultrafast",
         logger=None
     )
-    print(f"Rick's Clips video rendered successfully: {output_path} ({duration:.1f}s)")
+    print(f"Rick's Clips video rendered successfully: {output_path} (30 FPS, {duration:.1f}s)")
 
 # ==========================================
 # 3. YOUTUBE UPLOADER
@@ -287,7 +298,7 @@ def upload_to_youtube(video_path: str, episode: dict) -> str:
         "snippet": {
             "title": title[:100],
             "description": description[:5000],
-            "tags": episode["tags"],
+            "tags": episode.get("tags", ["engineering", "science", "curiosity", "shorts"]),
             "categoryId": "27",  # Education
             "defaultLanguage": "en",
             "defaultAudioLanguage": "en"
@@ -309,27 +320,29 @@ def upload_to_youtube(video_path: str, episode: dict) -> str:
     return vid_id
 
 # ==========================================
-# 4. MAIN ENTRY POINT
+# 4. MAIN ENTRY POINT (GOOGLE FLOW)
 # ==========================================
 def main():
     print(f"=== Rick's Clips Automation Engine Started ({datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}) ===")
-    episode = random.choice(RICKS_EPISODES)
-    print(f"Selected Episode: {episode['title']}")
+    
+    # 1. Google Gemini Script Flow (generates dynamic fresh script daily or uses curated fallback)
+    episode = get_daily_episode()
+    print(f"Selected Story: {episode['title']}")
 
     voice_file = "ricks_narration.mp3"
     soundtrack_file = "ricks_soundtrack.wav"
     output_video_file = "ricks_clips_output.mp4"
 
-    # 1. Voiceover
+    # 2. Voiceover
     asyncio.run(generate_narration(episode, voice_file))
 
-    # 2. Sound Design & Mastered Soundtrack
+    # 3. Sound Design & Mastered Soundtrack
     duration = build_soundtrack(episode, voice_file, soundtrack_file)
 
-    # 3. Video Composition
+    # 4. Video Composition (30 FPS Smooth Motion)
     render_ricks_video(episode, soundtrack_file, output_video_file, duration)
 
-    # 4. YouTube Upload
+    # 5. YouTube Upload
     upload_to_youtube(output_video_file, episode)
 
     print("=== Rick's Clips Episode Completed Successfully ===")
