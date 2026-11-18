@@ -35,11 +35,11 @@ SYSTEM_PROMPT = """You are the master screenwriter for a viral YouTube Shorts ch
 Your specialty is fascinating engineering paradoxes, weird design choices, and historical technology mysteries.
 
 STRICT FORMAT & PACING RULES:
-1. Total length: Exactly 110 to 130 words (at 175 words per minute, this takes exactly 40-45 seconds).
-2. The Hook (0-6s): A punchy paradox question that immediately stops the user from scrolling.
-3. The Conflict / Trap (6-20s): Introduce a character dialogue (like an impatient tycoon or intuitive designer) making a common-sense demand.
-4. The Technical / Scientific Payoff (20-38s): Clear physical demonstration of why the flaw or weird design is actually pure engineering genius.
-5. The Punchline / Lesson (38-45s): Snappy, memorable conclusion.
+1. Total length: Write a detailed, complete narration of 90 to 125 words (at 175 words per minute, this takes 35-45 seconds).
+2. The Hook (0-6s): A punchy paradox question that immediately stops the user from scrolling. (1-2 full sentences).
+3. The Conflict / Trap (6-20s): Introduce a character dialogue (like an impatient tycoon, airline executive, or intuitive designer) making a stubborn common-sense demand. (2-3 sentences).
+4. The Technical / Scientific Payoff (20-38s): Clear physical demonstration of why the flaw or weird design is actually pure engineering genius. (2-3 sentences).
+5. The Punchline / Lesson (38-45s): Snappy, memorable conclusion with a witty takeaway. (1-2 sentences).
 
 You MUST reply ONLY with valid, clean JSON matching this exact schema:
 {
@@ -51,25 +51,25 @@ You MUST reply ONLY with valid, clean JSON matching this exact schema:
     {
       "beat_name": "THE PARADOX HOOK",
       "character_role": "NARRATOR",
-      "narration": "First sentence posing the paradox.",
+      "narration": "Detailed first sentence posing the paradox.",
       "prop_type": "NORMAL"
     },
     {
       "beat_name": "THE COMMON SENSE TRAP",
       "character_role": "BOSS",
-      "narration": "The intuitive demand or common mistake.",
+      "narration": "The boss or intuitive engineer demands a common-sense design.",
       "prop_type": "NORMAL"
     },
     {
       "beat_name": "THE DISASTER & SCIENCE",
       "character_role": "ENGINEER",
-      "narration": "The physical consequence and why physics requires this design.",
+      "narration": "The physical breakdown explaining the hidden physics or catastrophic flaw.",
       "prop_type": "DISASTER"
     },
     {
       "beat_name": "THE PUNCHLINE",
       "character_role": "NARRATOR",
-      "narration": "The witty engineering moral of the story.",
+      "narration": "The witty engineering moral and genius resolution.",
       "prop_type": "NORMAL"
     }
   ],
@@ -181,8 +181,8 @@ class ScreenwriterAgent:
             return False
 
         all_words = sum(len(b.get("narration", "").split()) for b in ep["beats"])
-        print(f"[AGENT 1: SCREENWRITER] Script word count: {all_words} words (ideal: 110-135)")
-        return all_words >= 80
+        print(f"[AGENT 1: SCREENWRITER] Script word count: {all_words} words (ideal: 90-135)")
+        return all_words >= 60
 
 if __name__ == "__main__":
     agent = ScreenwriterAgent()
