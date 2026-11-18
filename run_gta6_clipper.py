@@ -41,6 +41,17 @@ def setup_clipper():
         f.write(f"GOOGLE_API_KEY={gemini_key}\n")
     print(f"[GTA 6 CLIPPER] Configured .env with Gemini API key in {CLIPPING_DIR}")
 
+    # Set up cookies.txt for yt-dlp authentication
+    cookies_content = os.environ.get("YOUTUBE_COOKIES", "").strip()
+    if cookies_content:
+        cookie_path = os.path.join(CLIPPING_DIR, "cookies.txt")
+        with open(cookie_path, "w", encoding="utf-8") as f:
+            f.write(cookies_content)
+        # Also write to root directory
+        with open("cookies.txt", "w", encoding="utf-8") as f:
+            f.write(cookies_content)
+        print(f"[GTA 6 CLIPPER] Loaded authenticated YouTube cookies ({len(cookies_content)} bytes)")
+
 def run_clipping(target_url: str, num_clips: int = 10) -> list:
     """Executes opensource-clipping main.py to generate vertical 9:16 viral shorts."""
     print(f"[GTA 6 CLIPPER] Running AI Auto-Clipper on: {target_url} (Generating {num_clips} clips)...")
