@@ -73,15 +73,28 @@ class PublishingAgent:
         print(f"[AGENT 4: PUBLISHING AGENT] Uploading '{title[:60]}...' to YouTube ({self.privacy})...")
         media = MediaFileUpload(video_path, chunksize=-1, resumable=True, mimetype="video/mp4")
         request = youtube.videos().insert(part="snippet,status", body=body, media_body=media)
-        response = request.execute()
 
-        vid_id = response.get("id")
-        video_url = f"https://youtu.be/{vid_id}"
-
-        print(f"[AGENT 4: PUBLISHING AGENT] SUCCESS! Video is live at: {video_url}")
-        return {
-            "status": "success",
-            "video_id": vid_id,
-            "video_url": video_url,
-            "title": title
-        }
+        try:
+            response = request.execute()
+            vid_id = response.get("id")
+            video_url = f"https://youtu.be/{vid_id}"
+            print(f"[AGENT 4: PUBLISHING AGENT] SUCCESS! Video is live at: {video_url}")
+            return {
+                "status": "success",
+                "video_id": vid_id,
+                "video_url": video_url,
+                "title": title
+            }
+        except Exception as e:
+            err_str = str(e)
+            if "uploadLimitExceeded" in err_str:
+                print(f"[AGENT 4: PUBLISHING AGENT] ⚠️ Daily YouTube upload limit reached for this channel (rolling 24-hour security limit).")
+                print(f"[AGENT 4: PUBLISHING AGENT] Video rendered & saved successfully. Ready for automatic upload once cooldown resets.")
+                return {
+                    "status": "limit_reached",
+                    "message": "Daily upload limit reached on YouTube channel.",
+                    "video_path": video_path
+                }
+            else:
+                print(f"[AGENT 4: PUBLISHING AGENT] Upload error: {e}")
+                raise e
