@@ -27,7 +27,7 @@ def download_stream_slice(youtube_url: str, start_time: str, end_time: str, outp
     """
     print(f"[CLIP CUTTER] Downloading stream slice: {youtube_url} ({start_time} -> {end_time})...")
 
-    # Uses iOS player client which does not trigger datacenter IP bot detection
+    # Base yt-dlp command
     cmd = [
         sys.executable, "-m", "yt_dlp",
         "--download-sections", f"*{start_time}-{end_time}",
@@ -36,8 +36,18 @@ def download_stream_slice(youtube_url: str, start_time: str, end_time: str, outp
         "-f", "bestvideo[height<=720]+bestaudio/best[height<=720]/best",
         "--merge-output-format", "mp4",
         "-o", output_path,
-        youtube_url
     ]
+
+    # Inject YOUTUBE_COOKIES if present
+    cookie_file = "youtube_cookies.txt"
+    cookies_content = os.environ.get("YOUTUBE_COOKIES", "").strip()
+    if cookies_content:
+        with open(cookie_file, "w", encoding="utf-8") as f:
+            f.write(cookies_content)
+        cmd.extend(["--cookies", cookie_file])
+        print(f"[CLIP CUTTER] Loaded authenticated YouTube cookies ({len(cookies_content)} bytes)")
+
+    cmd.append(youtube_url)
 
     try:
         res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=120)
