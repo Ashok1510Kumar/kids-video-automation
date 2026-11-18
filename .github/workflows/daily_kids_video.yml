@@ -47,7 +47,8 @@ jobs:
           YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
           YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || secrets.GOOGLE_FLOW_ID }}
+          GOOGLE_FLOW_ID: ${{ secrets.GOOGLE_FLOW_ID || secrets.GEMINI_API_KEY }}
           YT_PRIVACY: ${{ github.event.inputs.privacy || 'public' }}
         run: |
           python pipeline.py
