@@ -112,34 +112,41 @@ class ScreenwriterAgent:
         return episode
 
     def _generate_with_gemini(self, topic: str) -> dict:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={self.api_key}"
-        payload = {
-            "contents": [
-                {
-                    "parts": [
-                        {"text": f"{SYSTEM_PROMPT}\n\nWrite an episode about: {topic}"}
-                    ]
+        candidate_models = ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-2.0-flash-exp", "gemini-1.5-pro"]
+        
+        for model in candidate_models:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={self.api_key}"
+            payload = {
+                "contents": [
+                    {
+                        "parts": [
+                            {"text": f"{SYSTEM_PROMPT}\n\nWrite an episode about: {topic}"}
+                        ]
+                    }
+                ],
+                "generationConfig": {
+                    "temperature": 0.7,
+                    "responseMimeType": "application/json"
                 }
-            ],
-            "generationConfig": {
-                "temperature": 0.7,
-                "responseMimeType": "application/json"
             }
-        }
 
-        res = requests.post(url, json=payload, timeout=25)
-        if res.status_code == 200:
-            data = res.json()
-            raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
-            # Clean possible markdown wrap
-            if raw_text.startswith("```json"):
-                raw_text = raw_text.split("```json", 1)[1].rsplit("```", 1)[0].strip()
-            elif raw_text.startswith("```"):
-                raw_text = raw_text.split("```", 1)[1].rsplit("```", 1)[0].strip()
-            return json.loads(raw_text)
-        else:
-            print(f"[AGENT 1: SCREENWRITER] Gemini API error: {res.status_code} - {res.text}")
-            return None
+            try:
+                res = requests.post(url, json=payload, timeout=25)
+                if res.status_code == 200:
+                    data = res.json()
+                    raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
+                    if raw_text.startswith("```json"):
+                        raw_text = raw_text.split("```json", 1)[1].rsplit("```", 1)[0].strip()
+                    elif raw_text.startswith("```"):
+                        raw_text = raw_text.split("```", 1)[1].rsplit("```", 1)[0].strip()
+                    print(f"[AGENT 1: SCREENWRITER] Google Gemini Flow success with {model}!")
+                    return json.loads(raw_text)
+                else:
+                    print(f"[AGENT 1: SCREENWRITER] Gemini {model} returned {res.status_code}. Trying next candidate...")
+            except Exception as e:
+                print(f"[AGENT 1: SCREENWRITER] Request error for {model}: {e}")
+
+        return None
 
     def _validate_episode(self, ep: dict) -> bool:
         if not isinstance(ep, dict):
