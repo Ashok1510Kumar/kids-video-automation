@@ -4,7 +4,7 @@ Direct Publisher for Speed GTA 6 Short
 """
 import os
 import sys
-from agents import PublishingAgent
+from agents.publishing_agent import PublishingAgent
 
 def main():
     video_path = "speed_gta6_live_short.mp4"
