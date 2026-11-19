@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
 STREAMER CLIP CUTTER & SPLIT-SCREEN REFORMATTER
-1. Slices 30-50s clip from YouTube livestream using yt-dlp.
+1. Slices 30-45s clip from official livestreams using yt-dlp + FFmpeg.
 2. Converts 16:9 widescreen into high-retention 9:16 vertical Short:
-   - Full IRL Mode: High-impact 9:16 vertical crop centered on creator.
+   - Full IRL / Reaction Mode: Vertical center crop on streamer.
    - Gaming Mode: Top facecam zoomed, bottom gameplay action.
-3. Overlays:
-   - Top Hook Headline (Pure floating yellow text with 4px black stroke, NO BOXES)
-   - Verified Streamer Credit Badge (@IShowSpeed, @CarryMinati)
-   - YouTube Shorts safe zone compliance (Zero clipping)
+3. Pure floating text overlays (NO BOXES, NO CONTAINERS, NO CARTOONS):
+   - Top Hook Headline (Pure floating yellow text with 4px black stroke)
+   - Verified Streamer Credit Badge (@IShowSpeed)
+   - Bottom Reaction Subtitle (Pure floating white text with 4px black stroke)
 """
 
 import os
@@ -17,56 +17,114 @@ import math
 import subprocess
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
-from moviepy.editor import VideoFileClip, VideoClip, AudioFileClip, CompositeVideoClip
+from moviepy.editor import VideoFileClip, CompositeVideoClip
 from draw_utils import draw_floating_subtitles
 
 def download_stream_slice(youtube_url: str, start_time: str, end_time: str, output_path: str) -> bool:
     """
-    Downloads only the specified 30-50s slice using yt-dlp section slicing.
-    Keeps download size under 30MB without downloading multi-hour streams.
+    Downloads only the specified 30-45s slice using yt-dlp and ffmpeg.
+    Tries multiple client profiles (android, web, ios) to avoid bot detection.
     """
     print(f"[CLIP CUTTER] Downloading stream slice: {youtube_url} ({start_time} -> {end_time})...")
 
-    # Base yt-dlp command
+    # Clean up any leftover file
+    if os.path.exists(output_path):
+        os.remove(output_path)
+
+    # Strategy 1: Direct stream extraction via yt-dlp -g + FFmpeg fast slice
+    print("[CLIP CUTTER] Strategy 1: Extracting direct stream URL via yt-dlp...")
+    try:
+        g_cmd = [
+            sys.executable, "-m", "yt_dlp",
+            "-g",
+            "-f", "best[height<=720]/best",
+            "--remote-components", "ejs:github",
+            "--extractor-args", "youtube:player_client=android,web",
+            youtube_url
+        ]
+        g_res = subprocess.run(g_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=45)
+        if g_res.returncode == 0 and g_res.stdout.strip():
+            stream_urls = g_res.stdout.strip().split("\n")
+            direct_url = stream_urls[0]
+            print(f"[CLIP CUTTER] Stream URL resolved successfully. Slicing with FFmpeg ({start_time} -> {end_time})...")
+
+            # Calculate duration in seconds
+            def parse_time(t_str):
+                parts = [float(x) for x in t_str.split(":")]
+                if len(parts) == 3:
+                    return parts[0] * 3600 + parts[1] * 60 + parts[2]
+                elif len(parts) == 2:
+                    return parts[0] * 60 + parts[1]
+                return parts[0]
+
+            duration = max(15.0, parse_time(end_time) - parse_time(start_time))
+
+            ff_cmd = [
+                "ffmpeg", "-y",
+                "-ss", start_time,
+                "-i", direct_url,
+                "-t", str(int(duration)),
+                "-c:v", "libx264",
+                "-preset", "veryfast",
+                "-c:a", "aac",
+                output_path
+            ]
+            ff_res = subprocess.run(ff_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=120)
+            if ff_res.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 10000:
+                print(f"[CLIP CUTTER] Strategy 1 SUCCESS! Raw slice: {output_path} ({os.path.getsize(output_path)} bytes)")
+                return True
+            else:
+                print(f"[CLIP CUTTER] FFmpeg direct slice note: {ff_res.stderr[:200]}")
+    except Exception as e:
+        print(f"[CLIP CUTTER] Strategy 1 exception: {e}")
+
+    # Strategy 2: Standard yt-dlp section slicing with remote EJS solver
+    print("[CLIP CUTTER] Strategy 2: Section slicing via yt-dlp...")
     cmd = [
         sys.executable, "-m", "yt_dlp",
         "--download-sections", f"*{start_time}-{end_time}",
         "--force-keyframes-at-cuts",
         "--remote-components", "ejs:github",
+        "--extractor-args", "youtube:player_client=android,web",
         "-f", "bestvideo[height<=720]+bestaudio/best[height<=720]/best",
         "--merge-output-format", "mp4",
         "-o", output_path,
+        youtube_url
     ]
-
-    # Inject YOUTUBE_COOKIES if present
-    cookie_file = "youtube_cookies.txt"
-    cookies_content = os.environ.get("YOUTUBE_COOKIES", "").strip()
-    if cookies_content:
-        with open(cookie_file, "w", encoding="utf-8") as f:
-            f.write(cookies_content)
-        cmd.extend(["--cookies", cookie_file])
-        print(f"[CLIP CUTTER] Loaded authenticated YouTube cookies ({len(cookies_content)} bytes)")
-
-    cmd.append(youtube_url)
 
     try:
         res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=120)
         if res.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 10000:
-            print(f"[CLIP CUTTER] Successfully downloaded slice to: {output_path} ({os.path.getsize(output_path)} bytes)")
+            print(f"[CLIP CUTTER] Strategy 2 SUCCESS! Raw slice: {output_path} ({os.path.getsize(output_path)} bytes)")
             return True
         else:
-            print(f"[CLIP CUTTER] yt-dlp notice (code {res.returncode}): {res.stderr[:300]}")
+            print(f"[CLIP CUTTER] Strategy 2 notice (code {res.returncode}): {res.stderr[:300]}")
     except Exception as e:
-        print(f"[CLIP CUTTER] Download exception: {e}")
+        print(f"[CLIP CUTTER] Strategy 2 exception: {e}")
+
+    # Strategy 3: Try with cookies if provided
+    cookie_file = "youtube_cookies.txt"
+    cookies_content = os.environ.get("YOUTUBE_COOKIES", "").strip()
+    if cookies_content:
+        print("[CLIP CUTTER] Strategy 3: Attempting with cookies...")
+        with open(cookie_file, "w", encoding="utf-8") as f:
+            f.write(cookies_content)
+        cmd_cookies = cmd + ["--cookies", cookie_file]
+        try:
+            res_c = subprocess.run(cmd_cookies, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=120)
+            if res_c.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 10000:
+                print(f"[CLIP CUTTER] Strategy 3 SUCCESS! Raw slice: {output_path} ({os.path.getsize(output_path)} bytes)")
+                return True
+        except Exception as e:
+            print(f"[CLIP CUTTER] Strategy 3 exception: {e}")
 
     return False
 
 def format_split_screen_vertical(raw_clip_path: str, moment: dict, output_path: str):
     """
     Transforms downloaded 16:9 stream into viral 9:16 vertical Short:
-    - Real video of the creator filling the screen!
-    - Full IRL mode or Split-Screen Facecam + Gameplay
-    - Pure floating subtitles (no boxes)
+    - Real video of the creator filling the screen (NO CARTOONS).
+    - Pure floating subtitles (NO BOXES, NO BACKGROUND CONTAINERS).
     """
     print(f"[CLIP CUTTER] Reformatting real video clip into 9:16 vertical short...")
     clip = VideoFileClip(raw_clip_path)
@@ -121,21 +179,21 @@ def format_split_screen_vertical(raw_clip_path: str, moment: dict, output_path: 
         composite_layers = [top_cam, bot_game]
 
     try:
-        font_hook = ImageFont.truetype("DejaVuSans-Bold.ttf", 32)
+        font_hook = ImageFont.truetype("DejaVuSans-Bold.ttf", 34)
         font_badge = ImageFont.truetype("DejaVuSans-Bold.ttf", 22)
     except IOError:
         font_hook = font_badge = ImageFont.load_default()
 
-    # Dynamic floating overlays (Zero boxes)
+    # Dynamic floating overlays (Zero boxes, floating text with black stroke)
     def overlay_filter(get_frame, t):
         frame = Image.fromarray(get_frame(t)).convert("RGBA")
         draw = ImageDraw.Draw(frame)
 
-        # Top Floating Hook Headline (NO BOXES)
+        # Top Floating Hook Headline (NO BOXES, bold 4px black stroke)
         draw_floating_subtitles(
             draw=draw,
             text=moment.get("hook_text", moment["title"]),
-            center_pos=(out_w // 2, 70),
+            center_pos=(out_w // 2, 75),
             font=font_hook,
             max_width=580,
             fill_color=(255, 225, 0),      # Bright Viral Yellow
@@ -143,7 +201,7 @@ def format_split_screen_vertical(raw_clip_path: str, moment: dict, output_path: 
             stroke_width=4
         )
 
-        # Streamer Credit Watermark (Bottom / Center)
+        # Streamer Credit Badge (Bottom / Center)
         draw.text(
             (out_w // 2, out_h - 120),
             f"⚡ STREAMER: {moment['channel_credit']} ⚡",
@@ -154,7 +212,7 @@ def format_split_screen_vertical(raw_clip_path: str, moment: dict, output_path: 
             anchor="mm"
         )
 
-        # Floating Subtitle / Reaction text at bottom
+        # Floating Subtitle / Reaction text at bottom (NO BOXES)
         if t < clip.duration - 3.0:
             draw_floating_subtitles(
                 draw=draw,
@@ -167,7 +225,6 @@ def format_split_screen_vertical(raw_clip_path: str, moment: dict, output_path: 
                 stroke_width=4
             )
         else:
-            # Subscribe callout at end
             draw.text(
                 (out_w // 2, out_h - 220),
                 "SUBSCRIBE FOR DAILY VIRAL CLIPS!",
@@ -192,45 +249,8 @@ def format_split_screen_vertical(raw_clip_path: str, moment: dict, output_path: 
     )
     print(f"[CLIP CUTTER] Vertical 9:16 short generated successfully: {output_path}")
 
-def generate_fallback_streamer_clip(moment: dict, output_path: str, duration=35.0):
-    """Fallback only if network entirely fails."""
-    print(f"[CLIP CUTTER] Fallback animated engine called for '{moment['creator']}'...")
-    from character_rick import render_ricks_clips_character
-    w, h = 720, 1280
-    bg = Image.new("RGBA", (w, h), (18, 22, 30, 255))
-    draw = ImageDraw.Draw(bg)
-
-    try:
-        font_hook = ImageFont.truetype("DejaVuSans-Bold.ttf", 32)
-        font_badge = ImageFont.truetype("DejaVuSans-Bold.ttf", 22)
-    except IOError:
-        font_hook = font_badge = ImageFont.load_default()
-
-    char_shock = render_ricks_clips_character(costume="NARRATOR", eye_expression="WIDE_SHOCK", mouth_expression="OPEN_O", arm_pose="SHOCKED_HANDS", sweat_drop=True)
-
-    def make_frame(t):
-        frame = bg.copy()
-        fdraw = ImageDraw.Draw(frame)
-        bounce = int(5.0 * math.sin(t * 10.0))
-        frame.alpha_composite(char_shock, (int(w * 0.22), 350 + bounce))
-
-        draw_floating_subtitles(fdraw, moment["hook_text"], (w // 2, 100), font_hook, max_width=580, fill_color=(255, 225, 0), stroke_color=(0, 0, 0), stroke_width=4)
-        fdraw.text((w // 2, 700), f"⚡ CLIP CREDIT: {moment['channel_credit']} ⚡", font=font_badge, fill=(0, 229, 255), stroke_width=3, stroke_fill=(0, 0, 0), anchor="mm")
-        draw_floating_subtitles(fdraw, moment["title"].split("!")[0] + "!", (w // 2, 1050), font_hook, max_width=560, fill_color=(255, 255, 255), stroke_color=(0, 0, 0), stroke_width=4)
-
-        rgb = Image.new("RGB", (w, h), (255, 255, 255))
-        rgb.paste(frame, (0, 0), mask=frame.split()[3])
-        return np.array(rgb)
-
-    from music_generator import generate_nursery_music
-    temp_audio = "streamer_music.wav"
-    generate_nursery_music("groove", duration, temp_audio, bpm=124)
-    audio_clip = AudioFileClip(temp_audio)
-    video = VideoClip(make_frame, duration=duration).set_audio(audio_clip)
-    video.write_videofile(output_path, fps=30, codec="libx264", audio_codec="aac", preset="ultrafast", logger=None)
-
-def process_streamer_moment(moment: dict, output_video_path: str):
-    """Orchestrates downloading real footage, vertical formatting, and safe fallbacks."""
+def process_streamer_moment(moment: dict, output_video_path: str) -> bool:
+    """Orchestrates downloading real footage and vertical formatting. NO CARTOON FALLBACKS."""
     raw_slice = "temp_raw_slice.mp4"
 
     # Step 1: Download real video slice from YouTube
@@ -242,11 +262,8 @@ def process_streamer_moment(moment: dict, output_video_path: str):
     )
 
     if downloaded and os.path.exists(raw_slice) and os.path.getsize(raw_slice) > 10000:
-        try:
-            format_split_screen_vertical(raw_slice, moment, output_video_path)
-            return
-        except Exception as e:
-            print(f"[CLIP CUTTER] Error in formatting real video ({e}). Switching to fallback.")
+        format_split_screen_vertical(raw_slice, moment, output_video_path)
+        return True
 
-    # Fallback only if download completely blocked
-    generate_fallback_streamer_clip(moment, output_video_path, duration=35.0)
+    print(f"[CLIP CUTTER] ⚠️ Failed to download stream moment '{moment['title']}' from YouTube.")
+    return False
