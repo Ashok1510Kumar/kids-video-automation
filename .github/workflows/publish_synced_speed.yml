@@ -1,0 +1,36 @@
+name: Publish Synced Hyped Speed Short
+
+on:
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install google-api-python-client google-auth google-auth-oauthlib google-auth-httplib2
+
+      - name: Publish to YouTube
+        env:
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          YT_PRIVACY: 'public'
+        run: |
+          python publish_synced_speed.py
+
+      - name: Upload Video Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: speed-hyped-split-short-synced
+          path: speed_hyped_split_short_synced.mp4
