@@ -1,0 +1,51 @@
+name: Publish Cinematic 3D Videos to YouTube
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Which video to upload (short1, short2, longform, all)'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - short1
+          - short2
+          - longform
+      privacy:
+        description: 'YouTube Privacy Status (public, unlisted, private)'
+        required: false
+        default: 'public'
+        type: choice
+        options:
+          - public
+          - unlisted
+          - private
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install google-api-python-client google-auth google-auth-oauthlib google-auth-httplib2
+
+      - name: Publish to YouTube
+        env:
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          YT_PRIVACY: ${{ github.event.inputs.privacy || 'public' }}
+        run: |
+          python publish_cinematic_trio.py --target ${{ github.event.inputs.target || 'all' }} --privacy ${{ github.event.inputs.privacy || 'public' }}
