@@ -16,48 +16,49 @@ RELEASES = [
     {
         "id": "short1",
         "file": "japan_gambling_cinematic_short.mp4",
-        "title": "The Secret Window That Breaks Japan's Law! 🇯🇵🤫 #Shorts #Curiosity #Mystery",
+        "title": "The Secret Window That Breaks Japan's Law! 🇯🇵🤫 (ft. Kip) #Shorts #Curiosity",
         "description": (
-            "Gambling is 100% illegal in Japan... so how does a $200 BILLION gambling empire operate on every street corner? 🎰✨\n\n"
-            "Discover the genius 'San-ten Hōshiki' legal loophole that allows Tokyo Pachinko parlors to operate in broad daylight.\n\n"
-            "Would you have figured out the 3-shop trick or taken the cookies? Comment below! 👇\n\n"
-            "🔔 Subscribe for mind-bending real-world paradoxes every single week!\n\n"
-            "#Shorts #RicksClips #Japan #Mystery #LifeHacks #Law #Education #Curiosity"
+            "Hosted by Kip (The Curiosity Investigator)! 🔍✨\n\n"
+            "Gambling is 100% illegal in Japan... so how does a $200 BILLION gambling empire operate on every street corner? 🎰\n\n"
+            "Watch Kip break down the genius 'San-ten Hōshiki' legal loophole that allows Tokyo Pachinko parlors to operate in broad daylight.\n\n"
+            "🔔 Subscribe to investigate real-world paradoxes and engineering secrets with Kip every week!\n\n"
+            "#Shorts #Kip #Japan #Mystery #Curiosity #Law #Education #Animation #RicksClips"
         ),
         "category": "27", # Education
-        "tags": ["japan gambling law", "pachinko loophole", "san ten hoshiki", "how pachinko works", "japan mystery", "ricks clips", "legal loopholes", "engineering paradox", "shorts", "curiosity"]
+        "tags": ["kip", "japan gambling law", "pachinko loophole", "san ten hoshiki", "how pachinko works", "japan mystery", "ricks clips", "legal loopholes", "engineering paradox", "shorts", "curiosity"]
     },
     {
         "id": "short2",
         "file": "airplane_windows_cinematic_short.mp4",
-        "title": "Why Airplane Windows Are NEVER Square! ✈️📐 #Shorts #Engineering #Science",
+        "title": "Why Airplane Windows Are NEVER Square! ✈️📐 (ft. Kip) #Shorts #Engineering",
         "description": (
-            "If you ever board a passenger jet with square windows... RUN! 😱✈️\n\n"
-            "In 1954, the world's most advanced jetliner mysteriously broke apart in mid-air. The culprit? A simple 90-degree corner.\n\n"
-            "Here is the physics of how curved windows save millions of lives every single day.\n\n"
-            "🔔 Hit subscribe to unlock the hidden engineering behind everyday objects!\n\n"
-            "#Shorts #Aviation #Engineering #AirplaneFacts #Physics #ScienceFacts #Mystery #RicksClips"
+            "Hosted by Kip (The Curiosity Investigator)! 🔍✈️\n\n"
+            "If you ever board a passenger jet with square windows... RUN! 😱\n\n"
+            "In 1954, the world's most advanced jetliner mysteriously broke apart mid-air. Watch Kip uncover why 180 megapascals of stress concentrated right on a 90-degree corner, and how curved windows saved millions of lives.\n\n"
+            "🔔 Hit subscribe to investigate hidden engineering mysteries with Kip!\n\n"
+            "#Shorts #Kip #Aviation #Engineering #AirplaneFacts #Physics #ScienceFacts #Mystery #Animation"
         ),
         "category": "28", # Science & Technology
-        "tags": ["airplane square windows", "de havilland comet", "aviation mystery", "why airplane windows are round", "engineering disasters", "physics facts", "science shorts", "ricks clips"]
+        "tags": ["kip", "airplane square windows", "de havilland comet", "aviation mystery", "why airplane windows are round", "engineering disasters", "physics facts", "science shorts", "animation"]
     },
     {
         "id": "longform",
         "file": "engineering_loopholes_cinematic_longform.mp4",
-        "title": "3 Genius Engineering & Legal Loopholes That Broke The World! (Full Documentary)",
+        "title": "3 Genius Engineering & Legal Loopholes That Broke The World! (Documentary ft. Kip)",
         "description": (
-            "From a secret back-alley window in Tokyo that bypasses strict gambling bans, to the fatal 90-degree corners that tore apart the world's fastest passenger jet, discover 3 unbelievable engineering and legal loopholes that completely changed modern history! 🤯🛠️\n\n"
+            "Hosted by Kip (The Curiosity Investigator)! 🌐🛠️\n\n"
+            "From a secret back-alley sliding window in Tokyo that bypasses strict gambling bans, to the fatal 90-degree corners that tore apart the world's fastest passenger jet, and the summer heat that buckled steel railroad tracks into deadly sun kinks — join Kip as he investigates 3 unbelievable engineering and legal loopholes that changed history!\n\n"
             "⏱️ Chapters:\n"
             "00:00 - The Paradoxes That Fooled the World\n"
-            "00:18 - Chapter 1: The Tokyo Gambling Secret Window (Japan)\n"
+            "00:15 - Chapter 1: The Tokyo Gambling Secret Window (Japan)\n"
             "00:46 - Chapter 2: The Deadly Train Sun Kink (Railroad Physics)\n"
             "01:15 - Chapter 3: The Fatal Square Airplane Window (Aviation)\n"
             "01:36 - Conclusion: Why Perfection Requires Flaws\n\n"
-            "🔔 Subscribe for deep-dive animated engineering mysteries every week!\n\n"
-            "#Engineering #Documentary #Science #Physics #History #Animation #Curiosity"
+            "🔔 Subscribe for deep-dive animated engineering mysteries with Kip every week!\n\n"
+            "#Engineering #Documentary #Kip #Science #Physics #History #Animation #Curiosity"
         ),
         "category": "28", # Science & Technology
-        "tags": ["engineering loopholes", "san ten hoshiki", "sun kink", "railroad physics", "square airplane windows", "de havilland comet", "engineering documentary", "animation"]
+        "tags": ["kip", "engineering loopholes", "san ten hoshiki", "sun kink", "railroad physics", "square airplane windows", "de havilland comet", "engineering documentary", "animation"]
     }
 ]
 
